@@ -20,7 +20,7 @@
       "Type" : "AWS::Serverless::Function",
       "Properties": {
         "Handler": "WebApp::WebApp.LambdaEntryPoint::FunctionHandlerAsync",
-        "Runtime": "dotnetcore1.1",
+        "Runtime": "dotnetcore1.0",
         "CodeUri": {
           "Bucket": { "Ref": "CodeBucket" },
           "Key": {"Ref" :  "CodeKey"}
