@@ -1,5 +1,5 @@
 {
   "CodeBucket": "padnug",
-   "CodeKey": "SpotAnalytics/Latest.zip",
+   "CodeKey": "SpotAnalytics/WebApp.zip",
    "LambdaExecutionRole": "lambda_basic_execution"
 }
