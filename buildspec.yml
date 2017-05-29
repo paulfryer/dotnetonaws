@@ -16,6 +16,5 @@ phases:
       - dotnet publish -c release WebApp
 artifacts:
   files:
-    - **/*
-  base-directory:
-    - WebApp/bin/release/netcoreapp1.0/publish/
+    - '**/*'
+  base-directory: WebApp/bin/release/netcoreapp1.0/publish
