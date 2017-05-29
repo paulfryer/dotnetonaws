@@ -1,25 +1,33 @@
 {
   "AWSTemplateFormatVersion" : "2010-09-09",
   "Transform" : "AWS::Serverless-2016-10-31",
-  "Description" : "An AWS Serverless Application that uses the ASP.NET Core framework running in Amazon Lambda.",
-
-  "Parameters" : {
+  "Parameters": {
+    "CodeBucket": {
+      "Type": "String",
+      "Description": "The S3 bucket of the built code."
+    },
+    "CodeKey": {
+      "Type": "String",
+      "Description": "The S3 key of the built code."
+    },
+    "LambdaExecutionRole": {
+      "Type": "String",
+      "Description": "The execution role for Lambda."
+    }
   },
-
-  "Conditions" : {
-  },
-
   "Resources" : {
-
     "Get" : {
       "Type" : "AWS::Serverless::Function",
       "Properties": {
         "Handler": "WebApp::WebApp.LambdaEntryPoint::FunctionHandlerAsync",
         "Runtime": "dotnetcore1.1",
-        "CodeUri": "s3://codepipeline-us-west-2-857515054613/dotnet-serverless/MyAppBuild/vEFr3IP",
+        "CodeUri": {
+          "Bucket": { "Ref": "CodeBucket" },
+          "Key": {"Ref" :  "CodeKey"}
+        },
         "MemorySize": 256,
         "Timeout": 30,
-        "Role": null,
+        "Role": { "Ref" :  "LambdaExecutionRole" },
         "Policies": [ "AWSLambdaFullAccess" ],
         "Events": {
           "PutResource": {
@@ -32,8 +40,5 @@
         }
       }
     }
-  },
-
-  "Outputs" : {
   }
 }
