@@ -11,7 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace WebApplication1.Controllers
+namespace WebApp.Controllers
 { 
     [Route("api/[controller]")]
     public class ExchangesController : Controller {
@@ -96,7 +96,8 @@ namespace WebApplication1.Controllers
 
             }catch(Exception ex)
             {
-                return new BadRequestResult();
+                var result = new BadRequestResult();
+                return result;
             }            
         }
 

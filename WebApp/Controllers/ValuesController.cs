@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 
 
-namespace WebApplication1.Controllers
+namespace WebApp.Controllers
 {
 
     [Route("proxy")]

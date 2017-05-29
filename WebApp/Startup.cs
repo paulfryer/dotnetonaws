@@ -12,7 +12,7 @@ using Amazon.KeyManagementService;
 using Amazon.DynamoDBv2;
 using Amazon.Rekognition;
 
-namespace WebApplication1
+namespace WebApp
 {
     public class Startup
     {

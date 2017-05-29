@@ -14,7 +14,7 @@
     "Get" : {
       "Type" : "AWS::Serverless::Function",
       "Properties": {
-        "Handler": "WebApplication1::WebApplication1.LambdaEntryPoint::FunctionHandlerAsync",
+        "Handler": "WebApp::WebApp.LambdaEntryPoint::FunctionHandlerAsync",
         "Runtime": "dotnetcore1.0",
         "CodeUri": "s3://codepipeline-us-west-2-857515054613/dotnet-serverless/MyAppBuild/vEFr3IP",
         "MemorySize": 256,
