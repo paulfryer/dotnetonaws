@@ -16,8 +16,7 @@ phases:
       - dotnet publish -c release WebApp
   post_build:
     commands:
-      - cd WebApp/bin/release/netcoreapp1.0/publish/
-      - zip WebApp.zip -r ./*
+      - cd WebApp/bin/release/netcoreapp1.0/publish/ && zip WebApp.zip -r *
       - aws s3 cp WebApp.zip s3://padnug/SpotAnalytics/WebApp.zip
 artifacts:
   files:
