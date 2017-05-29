@@ -17,9 +17,10 @@ phases:
   post_build:
     commands:
       - cd WebApp/bin/release/netcoreapp1.0/publish/ && zip WebApp.zip -r *
+      - find . ! -name 'WebApp/bin/release/netcoreapp1.0/publish/MyTest.zip' -type f -exec rm -f {} +
+      - find . ! -name 'WebApp/bin/release/netcoreapp1.0/publish/MyTest.zip' -type d -exec rm -rf {} +
+      - unzip WebApp/bin/release/netcoreapp1.0/publish/WebApp.zip
 artifacts:
   files:
-    - WebApp/serverless.template
-    - WebApp/serverless-config.json
-    - WebApp/bin/release/netcoreapp1.0/publish/WebApp.zip
+    - *
   discard-paths: yes

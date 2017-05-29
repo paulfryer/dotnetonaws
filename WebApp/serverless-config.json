@@ -1,7 +1,7 @@
 {
   "Parameters": {
-    "CodeBucket": { "Fn::GetArtifactAtt": [ "LambdaFunctionSource", "BucketName" ] },
-    "CodeKey": { "Fn::GetArtifactAtt": [ "LambdaFunctionSource", "ObjectKey" ] },
+    "CodeBucket": { "Fn::GetArtifactAtt": [ "MyAppBuild", "BucketName" ] },
+    "CodeKey": { "Fn::GetArtifactAtt": [ "MyAppBuild", "ObjectKey" ] },
     "LambdaExecutionRole": "lambda_basic_execution"
   }
 }
