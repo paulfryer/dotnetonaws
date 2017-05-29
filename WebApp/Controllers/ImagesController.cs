@@ -11,11 +11,11 @@ using Amazon.Rekognition.Model;
 using System.IO;
 
 namespace WebApp.Controllers
-{ 
+{
     [Route("api/[controller]")]
-    public class ImagesController : Controller {
-
-
+    public class ImagesController : Controller
+    {
+        
         IAmazonRekognition rekognitionClient;
 
         public ImagesController(IAmazonRekognition rekognitionClient)
@@ -23,44 +23,53 @@ namespace WebApp.Controllers
             this.rekognitionClient = rekognitionClient;
         }
 
-       [HttpPost]
-       [Route("faces")]
+        [HttpPost]
+        [Route("detect")]
         public async Task<IActionResult> Index()
         {
-
-            var seekableStream = new MemoryStream();
-            await this.Request.Body.CopyToAsync(seekableStream);
-            seekableStream.Position = 0;
-
-            var detectFacesRequest = new DetectFacesRequest
+            var image = new Image
             {
-                Image = new Image {
-                Bytes = seekableStream
-                }
+                Bytes = ToMemoryStream(Request.Body)
             };
-            var result = await rekognitionClient.DetectFacesAsync(detectFacesRequest);
+
+            var faceDetectionTask = rekognitionClient.DetectFacesAsync(new DetectFacesRequest
+            {
+                Image = image
+            });
+
+            var labelDetectionTask = rekognitionClient.DetectLabelsAsync(new DetectLabelsRequest
+            {
+                Image = image
+            });
+
+            var moderationLableDetectionTask = rekognitionClient.DetectModerationLabelsAsync(new DetectModerationLabelsRequest
+            {
+                Image = image
+            });
+
+            await Task.WhenAll(faceDetectionTask, labelDetectionTask, moderationLableDetectionTask);
+
+            var result = new
+            {
+                FaceDetails = faceDetectionTask.Result.FaceDetails,
+                Labels = labelDetectionTask.Result.Labels,
+                ModerationLabels = moderationLableDetectionTask.Result.ModerationLabels
+            }; 
 
             return new ContentResult
             {
                 ContentType = "application/json",
-                Content = JsonConvert.SerializeObject(result.FaceDetails),
+                Content = JsonConvert.SerializeObject(result),
                 StatusCode = 200
             };
 
         }
 
-        public static byte[] ReadFully(Stream input)
-        {
-            byte[] buffer = new byte[16 * 1024];
-            using (MemoryStream ms = new MemoryStream())
-            {
-                int read;
-                while ((read = input.Read(buffer, 0, buffer.Length)) > 0)
-                {
-                    ms.Write(buffer, 0, read);
-                }
-                return ms.ToArray();
-            }
+        private MemoryStream ToMemoryStream(Stream stream) {
+            var seekableStream = new MemoryStream();
+            stream.CopyTo(seekableStream);
+            seekableStream.Position = 0;
+            return seekableStream;
         }
     }
 }
