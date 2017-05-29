@@ -16,8 +16,7 @@ phases:
       - dotnet publish -c release WebApp
   post_build:
     commands:
-      - cp WebApp/bin/release/netcoreapp1/publish/* /build-output/webapp
-      - aws s3 cp /build-output/webapp/* s3://padnug/SpotAnalytics/WebApp
+      - aws s3 cp WebApp/bin/release/netcoreapp1/publish/* s3://padnug/SpotAnalytics/WebApp
 artifacts:
   files:
     - WebApp/serverless.template
