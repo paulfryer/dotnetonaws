@@ -17,6 +17,6 @@ phases:
       - 
 artifacts:
   files:
-    - WebApp/bin/release/netcoreapp1.0/publish/**/*
+    - WebApp/bin/release/netcoreapp1.1/publish/**/*
     - WebApp/serverless.template
   discard-paths: yes
