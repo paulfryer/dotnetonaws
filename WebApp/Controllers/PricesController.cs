@@ -24,10 +24,7 @@ namespace WebApp.Controllers
        [Route("")]
         public async Task<IActionResult> Index()
         {
-
-
             var resp = await ec2Client.DescribeSpotPriceHistoryAsync();
-
             return new ContentResult
             {
                 Content = JsonConvert.SerializeObject(resp.SpotPriceHistory),
