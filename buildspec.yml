@@ -12,11 +12,11 @@ phases:
       - sudo apt-get update
   build:
     commands:
-      - dotnet restore WebApplication1
-      - dotnet publish -c release WebApplication1
+      - dotnet restore WebApp
+      - dotnet publish -c release WebApp
       - 
 artifacts:
   files:
-    - WebApplication1/bin/release/netcoreapp1.0/publish/**/*
-    - WebApplication1/serverless.template
+    - WebApp/bin/release/netcoreapp1.0/publish/**/*
+    - WebApp/serverless.template
   discard-paths: yes
