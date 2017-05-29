@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,6 +7,7 @@ using Amazon.S3;
 using Amazon.KeyManagementService;
 using Amazon.DynamoDBv2;
 using Amazon.Rekognition;
+using Amazon.EC2;
 
 namespace WebApp
 {
@@ -35,7 +32,7 @@ namespace WebApp
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc();
-          
+
             // Pull in any SDK configuration from Configuration object
             services.AddDefaultAWSOptions(Configuration.GetAWSOptions());
 
@@ -44,6 +41,7 @@ namespace WebApp
             services.AddAWSService<IAmazonDynamoDB>();
             services.AddAWSService<IAmazonKeyManagementService>();
             services.AddAWSService<IAmazonRekognition>();
+            services.AddAWSService<IAmazonEC2>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline

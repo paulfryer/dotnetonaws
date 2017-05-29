@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace WebApp.Controllers
 { 
-    [Route("api/[controller]")]
+    [Route("[controller]")]
     public class PricesController : Controller {
 
         public PricesController(  )
@@ -17,12 +17,22 @@ namespace WebApp.Controllers
 
        [HttpGet]
        [Route("")]
-        public async Task<IActionResult> GetAsync()
+        public async Task<IActionResult> Index()
         {
 
             try
             {
-                throw new NotImplementedException();
+                var model = new
+                {
+                    Prices = new List<dynamic> {
+                        new {
+                                Price = 0.332m
+                        }
+                    }
+
+                };
+
+                return View(model);
 
             }catch(Exception ex)
             {
