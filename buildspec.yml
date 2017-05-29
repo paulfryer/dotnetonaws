@@ -17,9 +17,9 @@ phases:
   post_build:
     commands:
       - cd WebApp/bin/release/netcoreapp1.0/publish/ && zip WebApp.zip -r *
-      - aws s3 cp WebApp/bin/release/netcoreapp1.0/publish/WebApp.zip s3://padnug/SpotAnalytics/WebApp.zip
 artifacts:
   files:
     - WebApp/serverless.template
     - WebApp/serverless-config.json
+    - WebApp/bin/release/netcoreapp1.0/publish/WebApp.zip
   discard-paths: yes

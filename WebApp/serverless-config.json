@@ -1,8 +1,7 @@
 {
   "Parameters": {
-    "CodeBucket": "padnug",
-    "CodeKey": "SpotAnalytics/WebApp.zip",
-    "LambdaExecutionRole": "lambda_basic_execution",
-    "Version" :  "1.0"
+    "CodeBucket": { "Fn::GetArtifactAtt": [ "LambdaFunctionSource", "BucketName" ] },
+    "CodeKey": { "Fn::GetArtifactAtt": [ "LambdaFunctionSource", "ObjectKey" ] },
+    "LambdaExecutionRole": "lambda_basic_execution"
   }
 }
