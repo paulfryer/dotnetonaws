@@ -45,6 +45,7 @@ namespace WebApp.Controllers
             {
                 Image = new Image
                 {
+                   
                     S3Object = new S3Object
                     {
                         Bucket = "padnug",
