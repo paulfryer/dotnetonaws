@@ -18,7 +18,6 @@ phases:
     commands:
       - cd WebApp/bin/release/netcoreapp1.0/publish/
       - zip WebApp.zip -r *
-      - cd ../../../../../
       - aws s3 cp WebApp.zip s3://padnug/SpotAnalytics/WebApp.zip
 artifacts:
   files:
