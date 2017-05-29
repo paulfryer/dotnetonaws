@@ -4,7 +4,15 @@
 <h1>Spot Prices</h1>
 
 
-@foreach (var priceHistory in Model.Prices)
-{
-        <br/>@priceHistory.Price
-}
+<table>
+    @foreach (var priceHistory in Model)
+    {
+        <tr>
+            <td>@priceHistory.InstanceType</td>
+            <td>@priceHistory.AvailabilityZone</td>
+            <td>@priceHistory.ProductDescription</td>
+            <td>@priceHistory.Timestamp</td>
+            <td>@priceHistory.Price</td>
+        </tr>
+    }
+</table>

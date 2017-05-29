@@ -5,14 +5,19 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Amazon.EC2;
 
 namespace WebApp.Controllers
 { 
     [Route("[controller]")]
     public class PricesController : Controller {
 
-        public PricesController(  )
-        {           
+
+        IAmazonEC2 ec2Client;
+
+        public PricesController(IAmazonEC2 ec2Client )
+        {
+            this.ec2Client = ec2Client;
         }
 
        [HttpGet]
@@ -20,19 +25,13 @@ namespace WebApp.Controllers
         public async Task<IActionResult> Index()
         {
 
+
+            var resp = await ec2Client.DescribeSpotPriceHistoryAsync();
+           
             try
             {
-                var model = new
-                {
-                    Prices = new List<dynamic> {
-                        new {
-                                Price = 0.332m
-                        }
-                    }
 
-                };
-
-                return View(model);
+                return View(resp.SpotPriceHistory);
 
             }catch(Exception ex)
             {
