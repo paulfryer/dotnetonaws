@@ -9,7 +9,7 @@ using Amazon.EC2;
 
 namespace WebApp.Controllers
 { 
-    [Route("[controller]")]
+    [Route("api/[controller]")]
     public class PricesController : Controller {
 
 
@@ -27,17 +27,14 @@ namespace WebApp.Controllers
 
 
             var resp = await ec2Client.DescribeSpotPriceHistoryAsync();
+
+            return new ContentResult
+            {
+                Content = JsonConvert.SerializeObject(resp.SpotPriceHistory),
+                ContentType = "application/json",
+                StatusCode = 200
+            };
            
-            try
-            {
-
-                return View(resp.SpotPriceHistory);
-
-            }catch(Exception ex)
-            {
-                var result = new BadRequestResult();
-                return result;
-            }            
         }
         
 
