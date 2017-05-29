@@ -14,9 +14,12 @@ phases:
     commands:
       - dotnet restore WebApp
       - dotnet publish -c release WebApp
-      - 
+  post_build:
+    commands:
+      - cp WebApp/bin/release/netcoreapp1/publish/* /build-output/webapp
+      - aws s3 cp /build-output/webapp/* s3://padnug/SpotAnalytics/WebApp
 artifacts:
   files:
-    - WebApp/bin/release/netcoreapp1.0/publish/**/*
     - WebApp/serverless.template
-  discard-paths: no
+    - WebApp/serverless-config.json
+  discard-paths: yes

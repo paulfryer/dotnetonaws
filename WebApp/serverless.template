@@ -27,7 +27,18 @@
         },
         "MemorySize": 256,
         "Timeout": 30,
-        "Role": { "Ref" :  "LambdaExecutionRole" },
+        "Role": {
+          "Fn::Join" :
+          [
+            "",
+            [
+              "arn:aws:iam::",
+              { "Ref": "AWS::AccountId" },
+              ":role/",
+              { "Ref": "LambdaExecutionRole" }
+            ]
+          ]
+        },
         "Policies": [ "AWSLambdaFullAccess" ],
         "Events": {
           "PutResource": {
