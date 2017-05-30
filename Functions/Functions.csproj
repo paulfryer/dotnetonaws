@@ -7,6 +7,7 @@
 
   <ItemGroup>
     <PackageReference Include="Amazon.Lambda.Core" Version="1.0.0" />
+    <PackageReference Include="Amazon.Lambda.DynamoDBEvents" Version="1.0.1" />
     <PackageReference Include="AWSSDK.CloudWatch" Version="3.3.2.6" />
     <PackageReference Include="AWSSDK.Core" Version="3.3.14" />
     <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.3.4.13" />

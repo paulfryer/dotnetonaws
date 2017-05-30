@@ -38,9 +38,20 @@ namespace Functions
         private AmazonEC2Client ec2 = new AmazonEC2Client();
         private AmazonCloudWatchClient cloudWatch = new AmazonCloudWatchClient();
 
-        public async Task SyncToCloudWatch(dynamic input, ILambdaContext context) {
+        public async Task SyncToCloudWatch(Amazon.Lambda.DynamoDBEvents.DynamoDBEvent @event, ILambdaContext context) {
 
-            // TODO: figure out what the sync object looks like.
+
+        
+            // TODO: figure out if the record has not been recorded in CloudWatch, then record it.
+
+            foreach (var record in @event.Records) {
+                Console.WriteLine(record.EventName);
+
+
+                //record.Dynamodb.NewImage["PartitionKey"]
+
+            }
+
 
 
             throw new NotImplementedException();
@@ -91,8 +102,8 @@ namespace Functions
                     }
                 });
 
-                // throttle the write rate to a minimum of 250ms per request.
-                await Task.WhenAll(writeTask, Task.Delay(250));
+                // throttle the write rate
+                await Task.WhenAll(writeTask, Task.Delay(500));
                 
             }
         }
