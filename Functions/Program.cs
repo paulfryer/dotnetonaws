@@ -3,6 +3,7 @@ using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
 using Amazon.EC2;
 using Amazon.Lambda.Core;
+using Amazon.Lambda.Serialization.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,7 +24,27 @@ namespace Functions
         {
             var controller = new SpotController();
 
-            await controller.SyncToDynamo("", null);
+
+
+
+            await controller.SyncToDynamo(Amazon.RegionEndpoint.APNortheast1, null);
+            await controller.SyncToDynamo(Amazon.RegionEndpoint.APNortheast2, null);
+            await controller.SyncToDynamo(Amazon.RegionEndpoint.APSouth1, null);
+            await controller.SyncToDynamo(Amazon.RegionEndpoint.APSoutheast1, null);
+            await controller.SyncToDynamo(Amazon.RegionEndpoint.APSoutheast2, null);
+            await controller.SyncToDynamo(Amazon.RegionEndpoint.CACentral1, null);
+            //await controller.SyncToDynamo(Amazon.RegionEndpoint.CNNorth1, null);
+            await controller.SyncToDynamo(Amazon.RegionEndpoint.EUCentral1, null);
+            await controller.SyncToDynamo(Amazon.RegionEndpoint.EUWest1, null);
+            await controller.SyncToDynamo(Amazon.RegionEndpoint.EUWest2, null);
+            await controller.SyncToDynamo(Amazon.RegionEndpoint.SAEast1, null);
+            await controller.SyncToDynamo(Amazon.RegionEndpoint.USEast1, null);
+            await controller.SyncToDynamo(Amazon.RegionEndpoint.USEast2, null);
+            //await controller.SyncToDynamo(Amazon.RegionEndpoint.USGovCloudWest1, null);
+            await controller.SyncToDynamo(Amazon.RegionEndpoint.USWest1, null);
+            await controller.SyncToDynamo(Amazon.RegionEndpoint.USWest2, null);
+
+
 
             Console.WriteLine("DONE!");
 
@@ -38,9 +59,11 @@ namespace Functions
         private AmazonEC2Client ec2 = new AmazonEC2Client();
         private AmazonCloudWatchClient cloudWatch = new AmazonCloudWatchClient();
 
+
+        [LambdaSerializer(typeof(JsonSerializer))]
         public async Task SyncToCloudWatch(Amazon.Lambda.DynamoDBEvents.DynamoDBEvent @event, ILambdaContext context) {
 
-
+            Console.Write(.@event);
         
             // TODO: figure out if the record has not been recorded in CloudWatch, then record it.
 
@@ -63,16 +86,22 @@ namespace Functions
             );*/
         }
 
-        public async Task SyncToDynamo(dynamic input, ILambdaContext context) {
+
+        public async Task SyncToDynamo(Amazon.RegionEndpoint region, ILambdaContext context) {
 
             Console.WriteLine("Starting to get prices.");
+            Console.WriteLine("PROCESSING REGION: " + region);
 
-            var resp = await ec2.DescribeSpotPriceHistoryAsync();
+            var instanceTypes = GetInstanceTypeDescriptions();
 
+            ec2 = new AmazonEC2Client(region);
 
+            var resp = await ec2.DescribeSpotPriceHistoryAsync(new Amazon.EC2.Model.DescribeSpotPriceHistoryRequest {
+                   
+            });
+            
             Console.Write(resp.NextToken);
-
-       
+                   
             while (resp.SpotPriceHistory.Count > 0) {
         
                 Console.WriteLine("Rows Left: " + resp.SpotPriceHistory.Count);
@@ -88,7 +117,16 @@ namespace Functions
                            {"Price", new AttributeValue(Convert.ToString(r.Price)) },
                            {"ProductDescription", new AttributeValue(r.ProductDescription) },
                            {"InstanceType", new AttributeValue(r.InstanceType) },
-                                 {"Timestamp", new AttributeValue(Convert.ToString(r.Timestamp)) },
+                           {"Timestamp", new AttributeValue(Convert.ToString(r.Timestamp)) },
+                           { "PricePerCPU", new AttributeValue{
+                            N = Convert.ToString(Convert.ToDecimal(r.Price) / instanceTypes.Single(it=>it.Code==r.InstanceType).CPU)
+                           }
+                           },
+                           {
+                               "PricePerECU", new AttributeValue{
+                                   N = Convert.ToString(Convert.ToDecimal(r.Price) / instanceTypes.Single(it=>it.Code==r.InstanceType).ECU)
+                               }
+                           }
 
                        }
                    }
@@ -108,5 +146,53 @@ namespace Functions
             }
         }
 
+
+        private List<InstanceTypeDescription> GetInstanceTypeDescriptions()
+        {
+            var instanceTypesFile = System.IO.File.OpenText("InstanceTypes.csv");
+
+            var csv = instanceTypesFile.ReadToEnd();
+            csv = csv.Replace("\"", "");
+            var rows = csv.Split('\n').ToList();
+            // remove header
+            rows.RemoveRange(0, 1);
+
+            var instanceTypes = new List<InstanceTypeDescription>();
+
+            foreach (var row in rows)
+            {
+                Console.WriteLine(row);
+                var cols = row.Split(',');
+                try
+                {
+                    instanceTypes.Add(new InstanceTypeDescription
+                    {
+                        Code = cols[1],
+                        Memory = Convert.ToDecimal(cols[2].Replace(" GB", "")),
+                        CPU = Convert.ToInt16(cols[4].Replace(" vCPUs", "")),
+                        ECU = Convert.ToDecimal(cols[3].Replace(" units", "")),
+                        MaxIPs = Convert.ToInt16(cols[16])
+                    });
+                }
+                catch (Exception e)
+                {
+                    Console.Write(e);
+                }
+
+            }
+
+            return instanceTypes;
+        }
+
     }
+
+    public class InstanceTypeDescription {
+        public string Code { get; set; }
+        public decimal Memory { get; set; }
+        public decimal ECU { get; set; }
+        public int CPU { get; set; }
+        public int MaxIPs { get; set; }
+    }
+
+
 }
