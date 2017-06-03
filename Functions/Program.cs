@@ -3,6 +3,8 @@ using Amazon.CloudWatch.Model;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
 using Amazon.EC2;
+using Amazon.KinesisFirehose;
+using Amazon.KinesisFirehose.Model;
 using Amazon.Lambda.Core;
 using Amazon.Lambda.DynamoDBEvents;
 using Amazon.Lambda.Serialization.Json;
@@ -29,9 +31,8 @@ namespace Functions
             var controller = new SpotController();
 
 
-            var dynamoEventJson = File.OpenText("DynamoEvent.json").ReadToEnd();
-            var @event = JsonConvert.DeserializeObject<DynamoDBEvent>(dynamoEventJson);
-
+           // var dynamoEventJson = File.OpenText("DynamoEvent.json").ReadToEnd();
+           // var @event = JsonConvert.DeserializeObject<DynamoDBEvent>(dynamoEventJson);
             // await controller.SyncToCloudWatch(@event, null);
 
             while (true) {
@@ -68,7 +69,7 @@ namespace Functions
         private IAmazonDynamoDB dynamo = new AmazonDynamoDBClient();
         private AmazonEC2Client ec2 = new AmazonEC2Client();
         private AmazonCloudWatchClient cloudWatch = new AmazonCloudWatchClient();
-
+        private AmazonKinesisFirehoseClient firehose = new AmazonKinesisFirehoseClient();
 
         [LambdaSerializer(typeof(Amazon.Lambda.Serialization.Json.JsonSerializer))]
         public async Task SyncToCloudWatch(DynamoDBEvent @event, ILambdaContext context) {
@@ -148,18 +149,67 @@ namespace Functions
             ec2 = new AmazonEC2Client(region);
 
             var resp = await ec2.DescribeSpotPriceHistoryAsync(new Amazon.EC2.Model.DescribeSpotPriceHistoryRequest {
-                   
+                  
             });
             
+            //resp.NextToken
+
             Console.Write(resp.NextToken);
-                   
+
+
+            var tasks = new List<Task>();
+
             while (resp.SpotPriceHistory.Count > 0) {
         
                 Console.WriteLine("Rows Left: " + resp.SpotPriceHistory.Count);
-                var maxRows = resp.SpotPriceHistory.Count >= 25 ? 25 : resp.SpotPriceHistory.Count; 
+                var maxRows = resp.SpotPriceHistory.Count >= 250 ? 250 : resp.SpotPriceHistory.Count; 
                 var rowsToSync = resp.SpotPriceHistory.GetRange(0, maxRows);
                 resp.SpotPriceHistory.RemoveRange(0, maxRows);
 
+                
+                var records = new List<Amazon.KinesisFirehose.Model.Record>();
+
+                foreach (var r in rowsToSync) {
+                    using (var memoryStream = new MemoryStream())
+                    {
+                        var streamWriter = new StreamWriter(memoryStream);
+
+                        var parts = new List<string>
+                        {
+                            r.AvailabilityZone.Split('-')[0],
+                            r.AvailabilityZone.Split('-')[1],
+                            r.AvailabilityZone.Split('-')[2],
+                            r.InstanceType.Value.Substring(0, r.InstanceType.Value.IndexOf('.') - 1),
+                            r.InstanceType.Value.Substring(r.InstanceType.Value.IndexOf('.') - 1, 1),
+                            r.InstanceType.Value.Substring(r.InstanceType.Value.IndexOf('.') + 1, r.InstanceType.Value.Length - r.InstanceType.Value.IndexOf('.') - 1),
+                            r.Price,                            
+                            r.ProductDescription,
+                            Convert.ToString(r.Timestamp.ToUniversalTime()),
+                            String.Format("{0:0.000000}", Convert.ToDecimal(r.Price) / instanceTypes.Single(it=>it.Code==r.InstanceType).CPU),
+                            String.Format("{0:0.000000}", Convert.ToDecimal(r.Price) / instanceTypes.Single(it=>it.Code==r.InstanceType).ECU),
+                            String.Format("{0:0.000000}", Convert.ToDecimal(r.Price) / instanceTypes.Single(it=>it.Code==r.InstanceType).Memory)
+                        };
+                        streamWriter.WriteLine(string.Join(",",parts));
+
+                        records.Add(new Amazon.KinesisFirehose.Model.Record
+                        {
+                            Data = memoryStream
+                        });
+
+                        streamWriter.Dispose();
+                    }
+                }
+                
+
+             
+                 var t = firehose.PutRecordBatchAsync(new PutRecordBatchRequest {
+                    DeliveryStreamName = "SpotPrice",
+                    Records = records
+                });
+
+                tasks.Add(t);
+
+                /*
                 var writeRequests = rowsToSync.Select(r => new WriteRequest {
                    PutRequest = new PutRequest {
                        Item = new Dictionary<string, AttributeValue> {
@@ -191,16 +241,23 @@ namespace Functions
                         { "SpotPriceHistory", writeRequests}
                     }
                 });
+                */
 
                 // throttle the write rate
-                await Task.WhenAll(writeTask, Task.Delay(100));
-                
+                //await Task.WhenAll(writeTask, Task.Delay(500));
+
             }
+            await Task.WhenAll(tasks);
         }
 
 
+        private static List<InstanceTypeDescription> instanceTypeDescriptions;
+
         private List<InstanceTypeDescription> GetInstanceTypeDescriptions()
         {
+            if (instanceTypeDescriptions != null)
+                return instanceTypeDescriptions;
+
             var instanceTypesFile = System.IO.File.OpenText("InstanceTypes.csv");
 
             var csv = instanceTypesFile.ReadToEnd();
@@ -213,7 +270,7 @@ namespace Functions
 
             foreach (var row in rows)
             {
-                Console.WriteLine(row);
+                //Console.WriteLine(row);
                 var cols = row.Split(',');
                 try
                 {
@@ -232,6 +289,8 @@ namespace Functions
                 }
 
             }
+
+            instanceTypeDescriptions = instanceTypes;
 
             return instanceTypes;
         }
