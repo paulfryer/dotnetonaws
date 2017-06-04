@@ -9,6 +9,7 @@ using Amazon.EC2;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
 using System.Linq;
+using System.Net;
 
 namespace WebApp.Controllers
 {
@@ -33,6 +34,8 @@ namespace WebApp.Controllers
         {
             try
             {
+                sortKey = WebUtility.UrlDecode(sortKey);
+
                 var resp = await dynamo.QueryAsync(new QueryRequest
                 {
                     TableName = "SpotPrice",
