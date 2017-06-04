@@ -1,4 +1,5 @@
-﻿using Amazon.CloudWatch;
+﻿using Amazon;
+using Amazon.CloudWatch;
 using Amazon.CloudWatch.Model;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
@@ -14,6 +15,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace Functions
@@ -31,44 +33,22 @@ namespace Functions
         {
             var controller = new SpotController();
 
-
+            /*
             var csv = new List<string>();
-
             string nextToken = "";
-
             while (nextToken != null) {
-                nextToken = await controller.QuerySpotHistory(Amazon.RegionEndpoint.CNNorth1, csv, nextToken);
+                nextToken = await controller.QuerySpotHistory(Amazon.RegionEndpoint.USGovCloudWest1, csv, nextToken);
             }
+            */
 
-            
 
             // var dynamoEventJson = File.OpenText("DynamoEvent.json").ReadToEnd();
             // var @event = JsonConvert.DeserializeObject<DynamoDBEvent>(dynamoEventJson);
             // await controller.SyncToCloudWatch(@event, null);
 
-            while (true)
-            {
-                await controller.SyncToDynamo(Amazon.RegionEndpoint.APNortheast1, null);
-                await controller.SyncToDynamo(Amazon.RegionEndpoint.APNortheast2, null);
-                await controller.SyncToDynamo(Amazon.RegionEndpoint.APSouth1, null);
-                await controller.SyncToDynamo(Amazon.RegionEndpoint.APSoutheast1, null);
-                await controller.SyncToDynamo(Amazon.RegionEndpoint.APSoutheast2, null);
-                await controller.SyncToDynamo(Amazon.RegionEndpoint.CACentral1, null);
-                //await controller.SyncToDynamo(Amazon.RegionEndpoint.CNNorth1, null);
-                await controller.SyncToDynamo(Amazon.RegionEndpoint.EUCentral1, null);
-                await controller.SyncToDynamo(Amazon.RegionEndpoint.EUWest1, null);
-                await controller.SyncToDynamo(Amazon.RegionEndpoint.EUWest2, null);
-                await controller.SyncToDynamo(Amazon.RegionEndpoint.SAEast1, null);
-                await controller.SyncToDynamo(Amazon.RegionEndpoint.USEast1, null);
-                await controller.SyncToDynamo(Amazon.RegionEndpoint.USEast2, null);
-                //await controller.SyncToDynamo(Amazon.RegionEndpoint.USGovCloudWest1, null);
-                await controller.SyncToDynamo(Amazon.RegionEndpoint.USWest1, null);
-                await controller.SyncToDynamo(Amazon.RegionEndpoint.USWest2, null);
-            }
 
-
-
-
+            await controller.SyncToDynamo(null, null);
+            
             Console.WriteLine("DONE!");
 
         }
@@ -85,9 +65,16 @@ namespace Functions
         private AmazonKinesisFirehoseClient firehose = new AmazonKinesisFirehoseClient();
 
 
+        [LambdaSerializer(typeof(Amazon.Lambda.Serialization.Json.JsonSerializer))]
+        public async Task SyncToDynamo(object @event, ILambdaContext context) {
+            var restrictedRegions = new List<RegionEndpoint> { RegionEndpoint.CNNorth1, RegionEndpoint.USGovCloudWest1 };
 
+            foreach (var region in RegionEndpoint.EnumerableAllRegions)
+                if (!restrictedRegions.Contains(region))
+                    await SyncToDynamoByRegion(region);
+        }
 
-        public async Task SyncToDynamo(Amazon.RegionEndpoint region, ILambdaContext context)
+        public async Task SyncToDynamoByRegion(RegionEndpoint region)
         {
 
             Console.WriteLine("Starting to get prices.");
@@ -97,58 +84,76 @@ namespace Functions
 
             ec2 = new AmazonEC2Client(region);
 
-            var resp = await ec2.DescribeSpotPriceHistoryAsync(new DescribeSpotPriceHistoryRequest
+            var respx = await ec2.DescribeSpotPriceHistoryAsync(new DescribeSpotPriceHistoryRequest
             {
 
             });
 
+
+            var groups = respx.SpotPriceHistory.GroupBy(s => string.Format("{0}|{1}|{2}", s.AvailabilityZone, s.InstanceType, s.ProductDescription));
+
+
+            var latestPrices = groups.Select(g => new { g.Key, Value = g.OrderByDescending(v => v.Timestamp).First() }).ToList();
+
             //resp.NextToken
 
 
-            while (resp.SpotPriceHistory.Count > 0)
+            while (latestPrices.Count > 0)
             {
+                Console.WriteLine("Items Left: " + latestPrices.Count);
+
+                var batchSize = 25;
+
+                if (batchSize > 25)
+                    batchSize = 25;
+
+                var maxRows = latestPrices.Count >= batchSize ? batchSize : latestPrices.Count;
+                var rowsToSync = latestPrices.GetRange(0, maxRows);
+                latestPrices.RemoveRange(0, maxRows);
 
 
-                var maxRows = resp.SpotPriceHistory.Count >= 25 ? 25 : resp.SpotPriceHistory.Count;
-                var rowsToSync = resp.SpotPriceHistory.GetRange(0, maxRows);
-                resp.SpotPriceHistory.RemoveRange(0, maxRows);
+                var writeRequests = new List<WriteRequest>();
 
-
-                var writeRequests = rowsToSync.Select(r => new WriteRequest
+                foreach (var r in rowsToSync)
                 {
-                    PutRequest = new PutRequest
+                    var instanceType = instanceTypes.Single(it => it.Code == r.Value.InstanceType);
+                    var o = new FlatPriceObservation(new PriceObservation(r.Value, instanceType));
+
+
+                    var partitionKey = "PR|AR|RE|RI|FA|GE|SI|AZ";
+                    var sortKey = string.Format("{0}|{1}|{2}|{3}|{4}|{5}|{6}|{7}", o.PR, o.AR, o.RE, o.RI, o.FA, o.GE, o.SI, o.AZ );
+
+                    var item = new Dictionary<string, AttributeValue> {
+                        { "PK", new AttributeValue(partitionKey) },
+                        { "SK", new AttributeValue(sortKey) } };
+                    foreach (var property in o.GetType().GetProperties())
                     {
-                        Item = new Dictionary<string, AttributeValue> {
-                           { "PartitionKey", new AttributeValue(string.Format("{0}|{1}|{2}", r.AvailabilityZone, r.InstanceType, r.ProductDescription)) },
-                           {"SortKey", new AttributeValue(Convert.ToString(r.Timestamp.ToUniversalTime())) },
-                           {"AvailabilityZone", new AttributeValue(r.AvailabilityZone) },
-                           {"Price", new AttributeValue(Convert.ToString(r.Price)) },
-                           {"ProductDescription", new AttributeValue(r.ProductDescription) },
-                           {"InstanceType", new AttributeValue(r.InstanceType) },
-                           {"Timestamp", new AttributeValue(Convert.ToString(r.Timestamp.ToUniversalTime())) },
-                           { "PricePerCPU", new AttributeValue{
-                            N = Convert.ToString(Convert.ToDecimal(r.Price) / instanceTypes.Single(it=>it.Code==r.InstanceType).CPU)
-                           }
-                           },
-                           {
-                               "PricePerECU", new AttributeValue{
-                                   N = Convert.ToString(Convert.ToDecimal(r.Price) / instanceTypes.Single(it=>it.Code==r.InstanceType).ECU)
-                               }
-                           }
-
-                       }
+                        var attributeValue = new AttributeValue();
+                        var value = Convert.ToString(property.GetValue(o));
+                        if (property.PropertyType == typeof(Decimal) || property.PropertyType == typeof(int))
+                            attributeValue.N = value;
+                        else
+                            attributeValue.S = value;
+                        item.Add(property.Name, attributeValue);
                     }
-                }).ToList();
-
+                    writeRequests.Add(new WriteRequest
+                    {
+                        PutRequest = new PutRequest
+                        {
+                            Item = item
+                        }
+                    });
+                }
+                
                 var writeTask = dynamo.BatchWriteItemAsync(new BatchWriteItemRequest
                 {
                     RequestItems = new Dictionary<string, List<WriteRequest>>
                     {
-                        { "SpotPriceHistory", writeRequests}
+                        { "SpotPrice", writeRequests}
                     }
                 });
 
-                await Task.WhenAll(writeTask, Task.Delay(500));
+                await Task.WhenAll(writeTask, Task.Delay(1000));
             }
         }
 
@@ -396,7 +401,7 @@ namespace Functions
         public decimal PricePerGB { get; private set; }
 
         public string ToJSON() {
-            var miniObservation = new MiniPriceObservation(this);
+            var miniObservation = new FlatPriceObservation(this);
             return JsonConvert.SerializeObject(miniObservation);
         }
 
@@ -422,37 +427,39 @@ namespace Functions
         }
     }
 
-    public class MiniPriceObservation {
-        public MiniPriceObservation(PriceObservation o)
+    public class FlatPriceObservation {
+        public FlatPriceObservation(PriceObservation o)
         {
-            A = o.AvailabilityZone.Area;
-            R = o.AvailabilityZone.Region;
-            I = o.AvailabilityZone.RegionInstance;
-            Z = o.AvailabilityZone.AZ;
-            F = o.InstanceType.Family;
-            G = o.InstanceType.Generation;
-            S = o.InstanceType.Size;
-            P = o.Product;
-            T = o.Timestamp;
-            U = o.Price;
-            C = o.PricePerCPU;
-            E = o.PricePerECU;
-            M = o.PricePerGB;
+            AR = o.AvailabilityZone.Area;
+            RE = o.AvailabilityZone.Region;
+            RI = o.AvailabilityZone.RegionInstance;
+            AZ = o.AvailabilityZone.AZ;
+            FA = o.InstanceType.Family;
+            GE = o.InstanceType.Generation;
+            SI = o.InstanceType.Size;
+            PR = o.Product;            
+            PU = o.Price;
+            PC = o.PricePerCPU;
+            PE = o.PricePerECU;
+            PM = o.PricePerGB;
+            LT = o.Timestamp;
+            IT = DateTime.UtcNow;
         }
 
-        public string A { get; private set; }
-        public string R { get; private set; }
-        public string I { get; private set; }
-        public string Z { get; private set; }
-        public string F { get; private set; }
-        public string G { get; private set; }
-        public string S { get; private set; }
-        public string P { get; private set; }
-        public DateTime T { get; private set; }
-        public decimal U { get; private set; }
-        public decimal C { get; private set; }
-        public decimal E { get; private set; }
-        public decimal M { get; private set; }
+        public string AR { get; private set; }
+        public string RE { get; private set; }
+        public string RI { get; private set; }
+        public string AZ { get; private set; }
+        public string FA { get; private set; }
+        public string GE { get; private set; }
+        public string SI { get; private set; }
+        public string PR { get; private set; }
+        public DateTime LT { get; private set; }
+        public decimal PU { get; private set; }
+        public decimal PC { get; private set; }
+        public decimal PE { get; private set; }
+        public decimal PM { get; private set; }
+        public DateTime IT { get; private set; }
     };
 
     public class AvailabilityZone
