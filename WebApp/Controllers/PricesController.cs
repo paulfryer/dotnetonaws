@@ -10,6 +10,9 @@ using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
 using System.Linq;
 using System.Net;
+using Functions;
+using Amazon.DynamoDBv2.DataModel;
+using Amazon.DynamoDBv2.DocumentModel;
 
 namespace WebApp.Controllers
 {
@@ -36,6 +39,40 @@ namespace WebApp.Controllers
             {
                 sortKey = WebUtility.UrlDecode(sortKey);
 
+                DynamoDBContext context = new DynamoDBContext(dynamo);
+
+
+                // http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBContext.QueryScan.html
+                //var resp1 = context.QueryAsync<FlatPriceObservation>("PK", QueryOperator.Equal, new List<string> { "PR|AR|RE|RI|FA|GE|SI|AZ" });
+
+                /*
+                var resp1 = context.FromQueryAsync<FlatPriceObservation>(new QueryOperationConfig {
+                    
+                    KeyExpression = new Expression {
+                            ExpressionStatement = "PK = :pk AND begins_with(SK, :sk)",
+                            ExpressionAttributeValues = new Dictionary<string, DynamoDBEntry>{
+                                { ":pk",  }
+                    },
+                    
+
+                    ExpressionAttributeValues = new Dictionary<string, AttributeValue> {
+                    { ":pk", new AttributeValue("PR|AR|RE|RI|FA|GE|SI|AZ") },
+                    { ":sk", new AttributeValue(sortKey) }
+                });
+
+                   context.FromQueryAsync<FlatPriceObservation>()
+                         var items = new List<FlatPriceObservation>();
+
+                
+                foreach (var i in resp.Items) {
+                    foreach (var k in i.Keys) {
+                      
+                    }        
+                }
+                */
+
+
+
                 var resp = await dynamo.QueryAsync(new QueryRequest
                 {
                     TableName = "SpotPrice",
@@ -45,8 +82,8 @@ namespace WebApp.Controllers
                     { ":pk", new AttributeValue("PR|AR|RE|RI|FA|GE|SI|AZ") },
                     { ":sk", new AttributeValue(sortKey) }
                 }
-                });
-
+                });             
+         
                 return new ContentResult
                 {
                     Content = JsonConvert.SerializeObject(resp.Items),

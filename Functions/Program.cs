@@ -428,6 +428,12 @@ namespace Functions
     }
 
     public class FlatPriceObservation {
+
+        public FlatPriceObservation()
+        {
+
+        }
+
         public FlatPriceObservation(PriceObservation o)
         {
             AR = o.AvailabilityZone.Area;
@@ -446,20 +452,20 @@ namespace Functions
             IT = DateTime.UtcNow;
         }
 
-        public string AR { get; private set; }
-        public string RE { get; private set; }
-        public string RI { get; private set; }
-        public string AZ { get; private set; }
-        public string FA { get; private set; }
-        public string GE { get; private set; }
-        public string SI { get; private set; }
-        public string PR { get; private set; }
-        public DateTime LT { get; private set; }
-        public decimal PU { get; private set; }
-        public decimal PC { get; private set; }
-        public decimal PE { get; private set; }
-        public decimal PM { get; private set; }
-        public DateTime IT { get; private set; }
+        public string AR { get; set; }
+        public string RE { get; set; }
+        public string RI { get; set; }
+        public string AZ { get; set; }
+        public string FA { get; set; }
+        public string GE { get; set; }
+        public string SI { get; set; }
+        public string PR { get; set; }
+        public DateTime LT { get; set; }
+        public decimal PU { get; set; }
+        public decimal PC { get; set; }
+        public decimal PE { get; set; }
+        public decimal PM { get; set; }
+        public DateTime IT { get; set; }
     };
 
     public class AvailabilityZone
