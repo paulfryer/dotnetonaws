@@ -6,6 +6,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="InstanceTypes.csv" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="InstanceTypes.csv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Amazon.Lambda.Core" Version="1.0.0" />
     <PackageReference Include="Amazon.Lambda.DynamoDBEvents" Version="1.0.1" />
     <PackageReference Include="Amazon.Lambda.Serialization.Json" Version="1.1.0" />
