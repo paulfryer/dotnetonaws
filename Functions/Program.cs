@@ -133,7 +133,7 @@ namespace Functions
                         string value;
 
                         if (property.PropertyType == typeof(DateTime))
-                            value = ((DateTime)property.GetValue(o)).ToString("yyyy-MM-ddTHH\\:mm\\:ss.fffffffzzz");
+                            value = ((DateTime)property.GetValue(o)).ToString("s", System.Globalization.CultureInfo.InvariantCulture);
                         else
                             value = Convert.ToString(property.GetValue(o));
 
