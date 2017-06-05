@@ -42,6 +42,14 @@ namespace WebApp.Controllers
                 DynamoDBContext context = new DynamoDBContext(dynamo);
 
 
+				string tableName = "SpotPrice";
+				Table table = Table.LoadTable(dynamo, tableName);
+
+                //var filter = new RangeFilter(QueryOperator.BeginsWith, sortKey);
+                var search = table.Query("PR|AR|RE|RI|FA|GE|SI|AZ", new QueryFilter("SK", QueryOperator.BeginsWith, sortKey));
+
+                var resp2 = await search.GetNextSetAsync();
+
                 // http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBContext.QueryScan.html
                 //var resp1 = context.QueryAsync<FlatPriceObservation>("PK", QueryOperator.Equal, new List<string> { "PR|AR|RE|RI|FA|GE|SI|AZ" });
 
@@ -70,6 +78,7 @@ namespace WebApp.Controllers
                     }        
                 }
                 */
+
 
 
 
