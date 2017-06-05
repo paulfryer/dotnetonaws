@@ -129,7 +129,14 @@ namespace Functions
                     foreach (var property in o.GetType().GetProperties())
                     {
                         var attributeValue = new AttributeValue();
-                        var value = Convert.ToString(property.GetValue(o));
+
+                        string value;
+
+                        if (property.PropertyType == typeof(DateTime))
+                            value = ((DateTime)property.GetValue(o)).ToString("yyyy-MM-ddTHH\\:mm\\:ss.fffffffzzz");
+                        else
+                            value = Convert.ToString(property.GetValue(o));
+
                         if (property.PropertyType == typeof(Decimal) || property.PropertyType == typeof(int))
                             attributeValue.N = value;
                         else
