@@ -80,7 +80,7 @@ namespace WebApp.Controllers
                 */
 
 
-                var observations = context.FromDocuments<FlatPriceObservation>(resp2).ToList();
+                var observations = context.FromDocuments<FlatPriceObservation>(resp2).OrderBy(o => o.PE).Take(100);
 
                 /*
                 var resp = await dynamo.QueryAsync(new QueryRequest
