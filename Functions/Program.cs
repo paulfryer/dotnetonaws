@@ -2,6 +2,7 @@
 using Amazon.CloudWatch;
 using Amazon.CloudWatch.Model;
 using Amazon.DynamoDBv2;
+using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2.Model;
 using Amazon.EC2;
 using Amazon.EC2.Model;
@@ -97,6 +98,7 @@ namespace Functions
 
             //resp.NextToken
 
+            DynamoDBContext context = new DynamoDBContext(dynamo);
 
             while (latestPrices.Count > 0)
             {
@@ -111,17 +113,19 @@ namespace Functions
                 var rowsToSync = latestPrices.GetRange(0, maxRows);
                 latestPrices.RemoveRange(0, maxRows);
 
-
+                var observationBatch = context.CreateBatchWrite<FlatPriceObservation>();
                 var writeRequests = new List<WriteRequest>();
 
                 foreach (var r in rowsToSync)
                 {
                     var instanceType = instanceTypes.Single(it => it.Code == r.Value.InstanceType);
                     var o = new FlatPriceObservation(new PriceObservation(r.Value, instanceType));
+                    observationBatch.AddPutItem(o);
 
-
+                    /*
                     var partitionKey = "PR|AR|RE|RI|FA|GE|SI|AZ";
                     var sortKey = string.Format("{0}|{1}|{2}|{3}|{4}|{5}|{6}|{7}", o.PR, o.AR, o.RE, o.RI, o.FA, o.GE, o.SI, o.AZ );
+                                     
 
                     var item = new Dictionary<string, AttributeValue> {
                         { "PK", new AttributeValue(partitionKey) },
@@ -133,7 +137,7 @@ namespace Functions
                         string value;
 
                         if (property.PropertyType == typeof(DateTime))
-                            value = ((DateTime)property.GetValue(o)).ToString("s", System.Globalization.CultureInfo.InvariantCulture);
+                            value = ((DateTime)property.GetValue(o)).ToString("o");
                         else
                             value = Convert.ToString(property.GetValue(o));
 
@@ -150,8 +154,13 @@ namespace Functions
                             Item = item
                         }
                     });
+                    */
                 }
-                
+
+
+                var writeTask = observationBatch.ExecuteAsync();
+
+                /*
                 var writeTask = dynamo.BatchWriteItemAsync(new BatchWriteItemRequest
                 {
                     RequestItems = new Dictionary<string, List<WriteRequest>>
@@ -159,12 +168,12 @@ namespace Functions
                         { "SpotPrice", writeRequests}
                     }
                 });
-
+                */
                 await Task.WhenAll(writeTask, Task.Delay(1000));
             }
         }
 
-        public async Task<string> QuerySpotHistory(Amazon.RegionEndpoint region, List<string> csv, string nextToken)
+        public async Task<string> QuerySpotHistory(RegionEndpoint region, List<string> csv, string nextToken)
         {
             Console.WriteLine(string.Format("Processing Region: {0}, NextToken: {1}", region, nextToken ?? nextToken.Substring(0, 10)));
             var instanceTypes = GetInstanceTypeDescriptions();
@@ -434,6 +443,7 @@ namespace Functions
         }
     }
 
+    [DynamoDBTable("SpotPrice")]
     public class FlatPriceObservation {
 
         public FlatPriceObservation()
@@ -457,8 +467,12 @@ namespace Functions
             PM = o.PricePerGB;
             LT = o.Timestamp;
             IT = DateTime.UtcNow;
+            PK = "PR|AR|RE|RI|FA|GE|SI|AZ";
+            SK = string.Format("{0}|{1}|{2}|{3}|{4}|{5}|{6}|{7}", PR, AR, RE, RI, FA, GE, SI, AZ);
         }
 
+        public string PK { get; set; }
+        public string SK { get; set; }
         public string AR { get; set; }
         public string RE { get; set; }
         public string RI { get; set; }

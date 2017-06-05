@@ -82,6 +82,7 @@ namespace WebApp.Controllers
 
                 var observations = context.FromDocuments<FlatPriceObservation>(resp2).ToList();
 
+                /*
                 var resp = await dynamo.QueryAsync(new QueryRequest
                 {
                     TableName = "SpotPrice",
@@ -92,10 +93,10 @@ namespace WebApp.Controllers
                     { ":sk", new AttributeValue(sortKey) }
                 }
                 });             
-         
+         */
                 return new ContentResult
                 {
-                    Content = JsonConvert.SerializeObject(resp.Items),
+                    Content = JsonConvert.SerializeObject(observations),
                     ContentType = "application/json",
                     StatusCode = 200
                 };
