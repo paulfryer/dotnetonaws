@@ -47,7 +47,8 @@ namespace WebApp.Controllers
 
                 //var filter = new RangeFilter(QueryOperator.BeginsWith, sortKey);
                 var search = table.Query("PR|AR|RE|RI|FA|GE|SI|AZ", new QueryFilter("SK", QueryOperator.BeginsWith, sortKey));
-
+                
+                
                 var resp2 = await search.GetNextSetAsync();
 
                 // http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBContext.QueryScan.html
