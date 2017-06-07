@@ -1,4 +1,4 @@
-﻿using Amazon;
+﻿﻿using Amazon;
 using Amazon.CloudWatch;
 using Amazon.CloudWatch.Model;
 using Amazon.DynamoDBv2;
@@ -47,6 +47,7 @@ namespace Functions
             // var @event = JsonConvert.DeserializeObject<DynamoDBEvent>(dynamoEventJson);
             // await controller.SyncToCloudWatch(@event, null);
 
+            //await controller.QueryAthena();
 
             await controller.SyncToDynamo(null, null);
             
@@ -73,6 +74,17 @@ namespace Functions
             foreach (var region in RegionEndpoint.EnumerableAllRegions)
                 if (!restrictedRegions.Contains(region))
                     await SyncToDynamoByRegion(region);
+        }
+
+        public async Task QueryAthena(){
+            var athena = new Amazon.Athena.AmazonAthenaClient(RegionEndpoint.USWest2);
+
+            var resp = await athena.GetQueryResultsAsync(new Amazon.Athena.Model.GetQueryResultsRequest{
+                QueryExecutionId = "executionId"
+            });
+
+
+
         }
 
         public async Task SyncToDynamoByRegion(RegionEndpoint region)

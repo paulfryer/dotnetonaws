@@ -10,6 +10,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Amazon.Athena;
 
 namespace WebApp.Controllers
 { 
@@ -20,18 +21,20 @@ namespace WebApp.Controllers
         private IAmazonDynamoDB dynamoClient;
         private IAmazonS3 s3Client;
         private IAmazonRekognition rekognitionClient;
+        private IAmazonAthena athena;
 
         public ExchangesController(IAmazonKeyManagementService kmsClient, 
-            IAmazonDynamoDB dynamoClient, IAmazonS3 s3Client, IAmazonRekognition rekognitionClient)
+            IAmazonDynamoDB dynamoClient, IAmazonS3 s3Client, IAmazonRekognition rekognitionClient, IAmazonAthena athena )
         {
             this.rekognitionClient = rekognitionClient;
             this.s3Client = s3Client;
             this.kmsClient = kmsClient;
             this.dynamoClient = dynamoClient;
-
+            this.athena = athena;
             this.dynamoClient = new AmazonDynamoDBClient();
            
         }
+
 
         [HttpPost]
         [Route("image")]

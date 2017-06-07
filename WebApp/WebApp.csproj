@@ -28,7 +28,6 @@
     <PackageReference Include="Amazon.Lambda.S3Events" Version="1.0.0" />
     <PackageReference Include="Amazon.Lambda.Serialization.Json" Version="1.0.1" />
     <DotNetCliToolReference Include="Amazon.Lambda.Tools" Version="1.3.0-preview1" />
-    <PackageReference Include="AWSSDK.Core" Version="3.3.13" />
     <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.3.4.13" />
     <PackageReference Include="AWSSDK.EC2" Version="3.3.13.6" />
     <PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="3.3.0.3" />
@@ -45,6 +44,9 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer.Design" Version="1.1.1" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="1.1.1" />
     <PackageReference Include="Microsoft.VisualStudio.Web.BrowserLink" Version="1.1.0" />
+    <PackageReference Include="AWSSDK.Athena" Version="3.3.0" />
+    <PackageReference Include="AWSSDK.Core" Version="3.3.14.1" />
+    <PackageReference Include="AWSSDK.SQS" Version="3.3.2.4" />
   </ItemGroup>
   <ItemGroup>
     <DotNetCliToolReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Tools" Version="1.0.0" />
@@ -52,13 +54,4 @@
   <ItemGroup>
     <ProjectReference Include="..\Functions\Functions.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <Content Update="Views\Home\Index.cshtml">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Content>
-    <Content Update="Views\Prices\Index.cshtml">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-
 </Project>

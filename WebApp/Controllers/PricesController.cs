@@ -13,6 +13,11 @@ using System.Net;
 using Functions;
 using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2.DocumentModel;
+using Amazon.Athena;
+using Amazon.Athena.Model;
+using Amazon;
+using Amazon.SQS;
+using Amazon.SQS.Model;
 
 namespace WebApp.Controllers
 {
@@ -29,6 +34,77 @@ namespace WebApp.Controllers
             this.ec2 = ec2;
             this.dynamo = dynamo;
         }
+
+
+		[HttpGet]
+		[Route("athena")]
+		public async Task<IActionResult> ExecutueAthenaQueryAsync()
+		{
+
+			try
+			{
+                var athena = new AmazonAthenaClient(RegionEndpoint.USWest2);
+                var sqs = new AmazonSQSClient(RegionEndpoint.USWest2);
+                /*
+                var r1 = await athena.CreateNamedQueryAsync(new Amazon.Athena.Model.CreateNamedQueryRequest{
+                    Database = "spotanalytics",
+                    Name = "some name here.",
+                    QueryString = "SELECT * FROM price limit 1000;"
+                });
+                */
+
+                var resp = await athena.StartQueryExecutionAsync(new StartQueryExecutionRequest
+                {
+                    QueryExecutionContext = new QueryExecutionContext{
+                        Database = "spotanalytics"  
+                    },
+                    ResultConfiguration = new ResultConfiguration{
+                        OutputLocation = "s3://spot-price-data/"
+                    },
+                    QueryString = "SELECT * FROM price limit 10000;"
+                });
+
+                await Task.Delay(4000);
+
+                var results = await athena.GetQueryResultsAsync(new GetQueryResultsRequest { 
+                    QueryExecutionId = resp.QueryExecutionId,
+                    MaxResults = 1000
+                });
+
+
+                var sqsTasks = new List<Task>();
+                foreach (var r in results.ResultSet.Rows)
+                {
+                    var t = sqs.SendMessageAsync(new SendMessageRequest
+                    {
+                        QueueUrl = "https://sqs.us-west-2.amazonaws.com/989469592528/poc-LargeFile-Queue",
+                        MessageBody = JsonConvert.SerializeObject(r.Data)
+                    });
+                    sqsTasks.Add(t);
+                }
+
+                await Task.WhenAll(sqsTasks);
+
+				return new ContentResult
+				{
+					ContentType = "application/json",
+                    Content = JsonConvert.SerializeObject(results),
+					StatusCode = 200
+				};
+
+			}
+			catch (Exception ex)
+			{
+
+				return new ContentResult
+				{
+					ContentType = "text/html",
+					Content = String.Format("<html><body><h2>{0}<h2></body></html>", ex.Message),
+					StatusCode = 400
+				};
+			}
+
+		}
 
 
         [HttpGet]

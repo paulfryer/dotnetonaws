@@ -8,6 +8,7 @@ using Amazon.KeyManagementService;
 using Amazon.DynamoDBv2;
 using Amazon.Rekognition;
 using Amazon.EC2;
+using Amazon.Athena;
 
 namespace WebApp
 {
@@ -42,6 +43,8 @@ namespace WebApp
             services.AddAWSService<IAmazonKeyManagementService>();
             services.AddAWSService<IAmazonRekognition>();
             services.AddAWSService<IAmazonEC2>();
+
+            services.AddAWSService<IAmazonAthena>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline
