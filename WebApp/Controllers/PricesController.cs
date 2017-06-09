@@ -56,12 +56,12 @@ namespace WebApp.Controllers
                 var resp = await athena.StartQueryExecutionAsync(new StartQueryExecutionRequest
                 {
                     QueryExecutionContext = new QueryExecutionContext{
-                        Database = "spotanalytics"  
+                        Database = "sampledb"  
                     },
                     ResultConfiguration = new ResultConfiguration{
                         OutputLocation = "s3://spot-price-data/"
                     },
-                    QueryString = "SELECT * FROM price limit 10000;"
+                    QueryString = "SELECT * FROM elb_logs limit 10000;"
                 });
 
                 await Task.Delay(4000);
@@ -73,12 +73,27 @@ namespace WebApp.Controllers
 
 
                 var sqsTasks = new List<Task>();
-                foreach (var r in results.ResultSet.Rows)
+                // it looks like the first row is always the headers, so we'lls skip this.
+                // however a better method would be to NOT skip this and check if the row looks/feels like a 
+                // header and skip it that way. This way we don't throw away a row that might actually be a 
+                // non header.
+                foreach (var r in results.ResultSet.Rows.Skip(1))
                 {
+
+                    var record = new List<string>();
+
+                    foreach (var d in r.Data){
+                        record.Add(d.VarCharValue);
+                    }
+
+
+
+
+
                     var t = sqs.SendMessageAsync(new SendMessageRequest
                     {
                         QueueUrl = "https://sqs.us-west-2.amazonaws.com/989469592528/poc-LargeFile-Queue",
-                        MessageBody = JsonConvert.SerializeObject(r.Data)
+                        MessageBody = JsonConvert.SerializeObject(record.ToArray())
                     });
                     sqsTasks.Add(t);
                 }
