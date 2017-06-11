@@ -27,122 +27,51 @@ namespace Functions
         private AmazonCloudWatchClient cloudWatch = new AmazonCloudWatchClient();
         private AmazonKinesisFirehoseClient firehose = new AmazonKinesisFirehoseClient();
 
-
         [LambdaSerializer(typeof(Amazon.Lambda.Serialization.Json.JsonSerializer))]
-        public async Task SyncToDynamo(object @event, ILambdaContext context) {
+        public async Task SyncToDynamo(object @event, ILambdaContext context)
+        {
             var restrictedRegions = new List<RegionEndpoint> { RegionEndpoint.CNNorth1, RegionEndpoint.USGovCloudWest1 };
-
             foreach (var region in RegionEndpoint.EnumerableAllRegions)
                 if (!restrictedRegions.Contains(region))
                     await SyncToDynamoByRegion(region);
         }
 
-        public async Task QueryAthena(){
-            var athena = new Amazon.Athena.AmazonAthenaClient(RegionEndpoint.USWest2);
-
-            var resp = await athena.GetQueryResultsAsync(new Amazon.Athena.Model.GetQueryResultsRequest{
-                QueryExecutionId = "executionId"
-            });
-
-
-
-        }
-
         public async Task SyncToDynamoByRegion(RegionEndpoint region)
         {
-
             Console.WriteLine("Starting to get prices.");
             Console.WriteLine("PROCESSING REGION: " + region);
-
             var instanceTypes = GetInstanceTypeDescriptions();
-
             ec2 = new AmazonEC2Client(region);
-
-            var respx = await ec2.DescribeSpotPriceHistoryAsync(new DescribeSpotPriceHistoryRequest
-            {
-
-            });
-
-
+            var respx = await ec2.DescribeSpotPriceHistoryAsync(new DescribeSpotPriceHistoryRequest());
             var groups = respx.SpotPriceHistory.GroupBy(s => string.Format("{0}|{1}|{2}", s.AvailabilityZone, s.InstanceType, s.ProductDescription));
-
-
             var latestPrices = groups.Select(g => new { g.Key, Value = g.OrderByDescending(v => v.Timestamp).First() }).ToList();
 
-            //resp.NextToken
+
+            //var facetsBatch = 
 
             DynamoDBContext context = new DynamoDBContext(dynamo);
-
             while (latestPrices.Count > 0)
             {
                 Console.WriteLine("Items Left: " + latestPrices.Count);
-
                 var batchSize = 25;
-
                 if (batchSize > 25)
                     batchSize = 25;
-
                 var maxRows = latestPrices.Count >= batchSize ? batchSize : latestPrices.Count;
                 var rowsToSync = latestPrices.GetRange(0, maxRows);
                 latestPrices.RemoveRange(0, maxRows);
-
                 var observationBatch = context.CreateBatchWrite<FlatPriceObservation>();
                 var writeRequests = new List<WriteRequest>();
-
                 foreach (var r in rowsToSync)
                 {
                     var instanceType = instanceTypes.Single(it => it.Code == r.Value.InstanceType);
                     var o = new FlatPriceObservation(new PriceObservation(r.Value, instanceType));
                     observationBatch.AddPutItem(o);
-
-                    /*
-                    var partitionKey = "PR|AR|RE|RI|FA|GE|SI|AZ";
-                    var sortKey = string.Format("{0}|{1}|{2}|{3}|{4}|{5}|{6}|{7}", o.PR, o.AR, o.RE, o.RI, o.FA, o.GE, o.SI, o.AZ );
-                                     
-
-                    var item = new Dictionary<string, AttributeValue> {
-                        { "PK", new AttributeValue(partitionKey) },
-                        { "SK", new AttributeValue(sortKey) } };
-                    foreach (var property in o.GetType().GetProperties())
-                    {
-                        var attributeValue = new AttributeValue();
-
-                        string value;
-
-                        if (property.PropertyType == typeof(DateTime))
-                            value = ((DateTime)property.GetValue(o)).ToString("o");
-                        else
-                            value = Convert.ToString(property.GetValue(o));
-
-                        if (property.PropertyType == typeof(Decimal) || property.PropertyType == typeof(int))
-                            attributeValue.N = value;
-                        else
-                            attributeValue.S = value;
-                        item.Add(property.Name, attributeValue);
-                    }
-                    writeRequests.Add(new WriteRequest
-                    {
-                        PutRequest = new PutRequest
-                        {
-                            Item = item
-                        }
-                    });
-                    */
                 }
 
 
-                var writeTask = observationBatch.ExecuteAsync();
 
-                /*
-                var writeTask = dynamo.BatchWriteItemAsync(new BatchWriteItemRequest
-                {
-                    RequestItems = new Dictionary<string, List<WriteRequest>>
-                    {
-                        { "SpotPrice", writeRequests}
-                    }
-                });
-                */
-                await Task.WhenAll(writeTask, Task.Delay(1000));
+                var observationWriteTask = observationBatch.ExecuteAsync();
+                await Task.WhenAll(observationWriteTask, Task.Delay(1000));
             }
         }
 
@@ -231,9 +160,6 @@ namespace Functions
                         streamWriter.Dispose();
                     }
                 }
-
-
-
                 var t = firehose.PutRecordBatchAsync(new PutRecordBatchRequest
                 {
                     DeliveryStreamName = "SpotPrice",
@@ -292,18 +218,11 @@ namespace Functions
         [LambdaSerializer(typeof(Amazon.Lambda.Serialization.Json.JsonSerializer))]
         public async Task SyncToCloudWatch(DynamoDBEvent @event, ILambdaContext context)
         {
-
-
-
-            // Console.Write(JsonConvert.SerializeObject(@event));
-
             var records = @event.Records.ToList();
             var tasks = new List<Task>();
 
             while (records.Count > 0)
             {
-
-
                 var maxRows = records.Count >= 20 ? 20 : records.Count;
                 var rowsToSync = records.GetRange(0, maxRows);
                 records.RemoveRange(0, maxRows);
@@ -313,7 +232,6 @@ namespace Functions
 
                 foreach (var record in rowsToSync)
                 {
-                    //Console.WriteLine(record.EventName);
                     metricData.Add(new MetricDatum
                     {
                         MetricName = "PricePerECU",

@@ -4,6 +4,16 @@ using System;
 namespace Functions
 {
     [DynamoDBTable("SpotPrice")]
+    public class Facet {
+
+
+
+        public string PK { get; set; }
+        public string SK { get; set; }
+
+    }
+
+    [DynamoDBTable("SpotPrice")]
     public class FlatPriceObservation {
 
         public FlatPriceObservation()
