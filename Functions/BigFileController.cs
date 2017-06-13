@@ -15,27 +15,36 @@ namespace Functions
 
     public class BigFileController {
 
-        IAmazonAthena athena = new AmazonAthenaClient(RegionEndpoint.USWest2);
-        IAmazonSQS sqs = new AmazonSQSClient(RegionEndpoint.USWest2);
+        IAmazonAthena athena = new AmazonAthenaClient();
+        IAmazonSQS sqs = new AmazonSQSClient();
 
 
         [LambdaSerializer(typeof(Amazon.Lambda.Serialization.Json.JsonSerializer))]
         public async Task<dynamic> StartQueryExecution(dynamic @event, ILambdaContext context)
         {
-            var resp = await athena.StartQueryExecutionAsync(new StartQueryExecutionRequest
+            try
             {
-                QueryExecutionContext = new QueryExecutionContext
+                var resp = await athena.StartQueryExecutionAsync(new StartQueryExecutionRequest
                 {
-                    Database = @event.Database
-                },
-                ResultConfiguration = new ResultConfiguration
-                {
-                    OutputLocation = @event.OutputLocation
-                },
-                QueryString = @event.QueryString
-            });
+                    QueryExecutionContext = new QueryExecutionContext
+                    {
+                        Database = @event.Database
+                    },
+                    ResultConfiguration = new ResultConfiguration
+                    {
+                        OutputLocation = @event.OutputLocation                        
+                    },
+                    QueryString = @event.QueryString
+                });
 
-            @event.QueryExecutionId = resp.QueryExecutionId;
+                @event.QueryExecutionId = resp.QueryExecutionId;
+            }
+            catch (Exception ex)
+            {
+                Console.Write(ex);
+                @event.ErrorMessage = ex.Message;
+            }
+
 
             return @event;
         }
@@ -57,7 +66,7 @@ namespace Functions
                 // it looks like the first row is always the headers, so we'lls skip this.
                 // however a better method would be to NOT skip this and check if the row looks/feels like a 
                 // header and skip it that way. This way we don't throw away a row that might actually be a 
-                // non header.
+                // non header.                
                 foreach (var r in resp.ResultSet.Rows.Skip(1))
                 {
                     var record = new List<string>();
@@ -93,8 +102,12 @@ namespace Functions
             catch (Exception ex)
             {
                 Console.Write(ex);
+                @event.QueryStateMessage = ex.Message;
                 if (ex.Message.Contains("RUNNING"))
                     @event.QueryState = "RUNNING";
+                else if (ex.Message.Contains("FAILED"))
+                    @event.QueryState = "FAILED";
+                else @event.QueryState = "UNKNOWN";
             }
 
 
