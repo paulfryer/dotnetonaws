@@ -17,6 +17,11 @@ namespace Functions
 
         private static async Task TestSyncPricesAsync()
         {
+
+            var c = new ImageNetController();
+            var r = await c.TagImage(null, null);
+
+
             var controller = new SpotController();
 
             /*

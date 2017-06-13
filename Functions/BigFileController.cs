@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 
 namespace Functions
 {
+
     public class BigFileController {
 
         IAmazonAthena athena = new AmazonAthenaClient(RegionEndpoint.USWest2);
@@ -91,6 +92,7 @@ namespace Functions
             }
             catch (Exception ex)
             {
+                Console.Write(ex);
                 if (ex.Message.Contains("RUNNING"))
                     @event.QueryState = "RUNNING";
             }
