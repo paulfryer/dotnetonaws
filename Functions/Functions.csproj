@@ -38,6 +38,7 @@
     <PackageReference Include="AWSSDK.StepFunctions" Version="3.3.0.15" />
     <PackageReference Include="Newtonsoft.Json" Version="10.0.2" />
     <PackageReference Include="AWSSDK.Athena" Version="3.3.0" />
+    <PackageReference Include="AWSSDK.ElasticMapReduce" Version="3.3.3.10" />
   </ItemGroup>
 
 </Project>
