@@ -10,13 +10,17 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="ExportController.cs.txt" />
+    <Content Include="ExportController.cs" />
   </ItemGroup>
 
   <ItemGroup>
     <Content Include="InstanceTypes.csv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="ExportController.cs" />
   </ItemGroup>
 
   <ItemGroup>

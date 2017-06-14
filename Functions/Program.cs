@@ -10,7 +10,25 @@ namespace Functions
     {
         static void Main(string[] args)
         {
-            TestSyncPricesAsync().Wait();
+            TestExporter();
+
+            //TestSyncPricesAsync().Wait();
+
+            Console.ReadKey();
+        }
+        private static async Task TestExporter()
+        {
+            var c = new ExportController();
+
+            var @event = new StepFunctionExportState{
+                StateMachineArn = "arn:aws:states:us-west-2:989469592528:stateMachine:PollForTweets-2",
+                ExportBucketName = "code-build-output"
+            };
+
+            @event = await c.GetStepFunctionDefinition(@event);
+
+            while (@event.LambdaFunctionsToExport > 0)
+                await c.ExportLambdaFunction(@event);
 
             Console.ReadKey();
         }
