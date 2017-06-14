@@ -48,6 +48,7 @@ namespace Functions
             Console.WriteLine($"Found {@event.LambdaFunctionsToExport} lambda functions to export.");
 
             @event.LambdaFunctionConfigs = new List<FunctionConfiguration>();
+            @event.LambdaFunctionCodeLocations = new List<FunctionCodeLocation>();
 
             return @event;
         }
@@ -103,6 +104,7 @@ namespace Functions
             }
 
             @event.LambdaFunctionConfigs.Add(resp.Configuration);
+            @event.LambdaFunctionCodeLocations.Add(resp.Code);
 
             return @event;
         }
@@ -116,6 +118,7 @@ namespace Functions
         public List<string> LambdaFunctionArns { get; set; }
         public int LambdaFunctionsToExport { get { return LambdaFunctionArns.Count();  } set {  } }
         public List<FunctionConfiguration> LambdaFunctionConfigs { get; set; }
+        public List<FunctionCodeLocation> LambdaFunctionCodeLocations { get; set; }
         public string StepFunctionDefinition { get;set; }
     }
 
