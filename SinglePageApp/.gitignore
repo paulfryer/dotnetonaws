@@ -1,0 +1,4 @@
+/node_modules/*
+/dist/*
+/css/bundle.css
+/js/bundle.js

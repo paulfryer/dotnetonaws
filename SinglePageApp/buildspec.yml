@@ -1,0 +1,31 @@
+version: 0.2
+            
+phases:
+  pre_build:
+    commands:
+      - npm install uglify-js --global
+      - npm install html-minifier --global
+      - npm install browserify --global
+      - npm install clean-css --global
+      - npm update
+  build:
+    commands:
+      - npm run buildjs
+      - npm run buildcss
+      - mkdir dist
+      - cd dist
+      - mkdir js
+      - mkdir html
+      - mkdir css
+      - cd ..
+      - cp ./css/bundle.css ./dist/css/bundle.css
+      - sudo uglifyjs ./js/bundle.js -o ./dist/js/bundle.js
+      - cp index.html ./dist/index.html
+      - sudo html-minifier --input-dir html --output-dir ./dist/html --remove-comments
+  post_build:
+    commands:
+      - aws s3 cp ./dist/ s3://${BUCKET_NAME}/ --recursive
+artifacts:
+  files:
+    - dist/**/*
+  discard-paths: no

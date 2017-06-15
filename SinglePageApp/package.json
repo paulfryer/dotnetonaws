@@ -1,0 +1,31 @@
+{
+  "name": "skyeye.io",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "buildjs": "browserify js/app.js -o js/bundle.js",
+    "buildcss": "cleancss css/app.css -o css/bundle.css",
+    "watch": "watchify js/app.js -o js/bundle.js",
+    "build": "build.bat"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "amazon-cognito-identity-js": "^1.18.0",
+    "angular": "^1.5.8",
+    "angular-cache": "^4.6.0",
+    "angular-route": "^1.5.8",
+    "aws-sdk": "^2.54.0"
+  },
+  "devDependencies": {
+    "browserify": "^13.1.1",
+    "clean-css": "^3.4.20",
+    "html-minifier": "^3.1.0",
+    "http-server": "^0.9.0",
+    "uglify": "^0.1.5",
+    "uglify-js": "^2.7.4",
+    "uglifyjs": "^2.4.10",
+    "watchify": "^3.7.0"
+  }
+}
