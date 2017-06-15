@@ -8,7 +8,7 @@ namespace WebApp.Controllers
 {
     public class HomeController : Controller
     {
-        [Route("")]
+        [Route("app/[controller]")]
         public IActionResult Index()
         {
             return View();
