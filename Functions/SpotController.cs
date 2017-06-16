@@ -6,10 +6,15 @@ using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2.Model;
 using Amazon.EC2;
 using Amazon.EC2.Model;
+using Amazon.IoT;
+using Amazon.IoT.Model;
+using Amazon.IotData;
+using Amazon.IotData.Model;
 using Amazon.KinesisFirehose;
 using Amazon.KinesisFirehose.Model;
 using Amazon.Lambda.Core;
 using Amazon.Lambda.DynamoDBEvents;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -26,6 +31,64 @@ namespace Functions
         private AmazonEC2Client ec2 = new AmazonEC2Client();
         private AmazonCloudWatchClient cloudWatch = new AmazonCloudWatchClient();
         private AmazonKinesisFirehoseClient firehose = new AmazonKinesisFirehoseClient();
+        private AmazonIoTClient iot = new AmazonIoTClient();
+
+        [LambdaSerializer(typeof(Amazon.Lambda.Serialization.Json.JsonSerializer))]
+        public async Task PublishPriceChanges(DynamoDBEvent @event, ILambdaContext context)
+        {
+            var resp = await iot.AttachPrincipalPolicyAsync(new AttachPrincipalPolicyRequest
+            {
+                PolicyName = "PricePublisher",
+                Principal = "arn:aws:iot:us-west-2:989469592528:cert/f123a51787402e504d12e26d67b22ccb3bfe007879f0b5c41f8a506ca825eaeb"
+            });
+
+            Console.Write(JsonConvert.SerializeObject(resp));
+
+
+
+         var iotData = new AmazonIotDataClient("https://afczxfromx2vu.iot.us-west-2.amazonaws.com");
+
+
+        var tasks = new List<Task>();
+            foreach (var record in @event.Records)
+            {
+                var change = record.Dynamodb;
+                if (change.OldImage != null && change.NewImage != null) {
+                    var oldPricePerUnit = decimal.Parse(change.OldImage["PU"].N);
+                    var newPricePerUnit = decimal.Parse(change.NewImage["PU"].N);
+                    var changeObserved = newPricePerUnit - oldPricePerUnit;
+                    if (changeObserved != 0)
+                    {
+
+
+                        var message = JsonConvert.SerializeObject(new {
+                            PU = change.NewImage["PU"].N,
+                            SK = change.NewImage["SK"].S,
+                            CH = changeObserved
+                        });
+                        //Console.WriteLine(message);
+
+
+
+                        var stream = GenerateStreamFromString(message);
+                        var publishTask = iotData.PublishAsync(new PublishRequest { Topic = "prices", Payload = stream });
+                        tasks.Add(publishTask);
+                        //Console.WriteLine(JsonConvert.SerializeObject(publishResp));
+                    }
+                }
+            }
+            await Task.WhenAll();
+        }
+
+        public static MemoryStream GenerateStreamFromString(string s)
+        {
+            MemoryStream stream = new MemoryStream();
+            StreamWriter writer = new StreamWriter(stream);
+            writer.Write(s);
+            writer.Flush();
+            stream.Position = 0;
+            return stream;
+        }
 
         [LambdaSerializer(typeof(Amazon.Lambda.Serialization.Json.JsonSerializer))]
         public async Task SyncToDynamo(object @event, ILambdaContext context)
