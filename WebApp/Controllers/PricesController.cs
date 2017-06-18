@@ -108,6 +108,25 @@ namespace WebApp.Controllers
                 metricName += "|FA";
                 listMetricsReq.Dimensions.Add(new DimensionFilter { Name = "RI", Value = RI });
             }
+            if (!string.IsNullOrEmpty(FA)) {
+                var sortKey = WebUtility.UrlDecode($"{PR}|{AR}|{RE}|{RI}|{FA}");
+                DynamoDBContext context = new DynamoDBContext(dynamo);
+
+                string tableName = "SpotPrice";
+                Table table = Table.LoadTable(dynamo, tableName);
+
+                var search = table.Query("PR|AR|RE|RI|FA|GE|SI|AZ", new QueryFilter("SK", QueryOperator.BeginsWith, sortKey));
+
+                var resp2 = await search.GetNextSetAsync();
+
+                var observations = context.FromDocuments<FlatPriceObservation>(resp2).OrderBy(o => o.PE).Take(100);
+                return new ContentResult
+                {
+                    Content = JsonConvert.SerializeObject(observations),
+                    ContentType = "application/json",
+                    StatusCode = 200
+                };
+            }
 
             listMetricsReq.MetricName = metricName;
 
