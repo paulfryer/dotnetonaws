@@ -3,6 +3,7 @@ var AWS = require('aws-sdk');
 var dynamodb, s3;
 
 require('angular-chart.js');
+require('paho-mqtt');
 
 module.exports = function($scope, $location, $route, $routeParams, UtilityService) {
     console.log("inside the prices controller.");
