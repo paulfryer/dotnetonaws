@@ -42,40 +42,136 @@ namespace Functions
                 Principal = "arn:aws:iot:us-west-2:989469592528:cert/f123a51787402e504d12e26d67b22ccb3bfe007879f0b5c41f8a506ca825eaeb"
             });
 
-            Console.Write(JsonConvert.SerializeObject(resp));
+            //Console.Write(JsonConvert.SerializeObject(resp));
 
 
+            
 
-         var iotData = new AmazonIotDataClient("https://afczxfromx2vu.iot.us-west-2.amazonaws.com");
+            var iotData = new AmazonIotDataClient("https://afczxfromx2vu.iot.us-west-2.amazonaws.com");
 
 
-        var tasks = new List<Task>();
+            var tasks = new List<Task>();
             foreach (var record in @event.Records)
             {
-                var change = record.Dynamodb;
-                if (change.OldImage != null && change.NewImage != null) {
-                    var oldPricePerUnit = decimal.Parse(change.OldImage["PU"].N);
-                    var newPricePerUnit = decimal.Parse(change.NewImage["PU"].N);
-                    var changeObserved = newPricePerUnit - oldPricePerUnit;
-                    if (changeObserved != 0)
+                try
+                {
+                    var change = record.Dynamodb;
+                    if (change.OldImage != null && change.NewImage != null)
                     {
+                        var metricData = new List<MetricDatum>();
+
+                        var oldPricePerUnit = decimal.Parse(change.OldImage["PU"].N);
+                        var newPricePerUnit = decimal.Parse(change.NewImage["PU"].N);
+                        var changeObserved = newPricePerUnit - oldPricePerUnit;
+                        if (changeObserved != 0)
+                        {
+
+                            var ni = change.NewImage;
+                            var o = new FlatPriceObservation
+                            {
+                                AR = ni["AR"].S,
+                                AZ = ni["AZ"].S,
+                                FA = ni["FA"].S,
+                                GE = ni["GE"].S,
+                                IT = DateTime.Parse(ni["IT"].S),
+                                LT = DateTime.Parse(ni["LT"].S),
+                                PC = Decimal.Parse(ni["PC"].N),
+                                PE = Decimal.Parse(ni["PE"].N),
+                                PK = ni["PK"].S,
+                                PM = Decimal.Parse(ni["PM"].N),
+                                PR = ni["PR"].S,
+                                PU = Decimal.Parse(ni["PU"].N),
+                                RE = ni["RE"].S,
+                                RI = ni["RI"].S,
+                                SI = ni["SI"].S,
+                                SK = ni["SK"].S                                
+                            };
 
 
-                        var message = JsonConvert.SerializeObject(new {
-                            PU = change.NewImage["PU"].N,
-                            SK = change.NewImage["SK"].S,
-                            CH = changeObserved
-                        });
-                        //Console.WriteLine(message);
 
+                            var message = JsonConvert.SerializeObject(o);
 
+                            var topic = $"prices/{o.SK.Substring(0, o.SK.Length - 2).Replace("|", "/")}";
 
-                        var stream = GenerateStreamFromString(message);
-                        var publishTask = iotData.PublishAsync(new PublishRequest { Topic = "prices", Payload = stream });
-                        tasks.Add(publishTask);
-                        //Console.WriteLine(JsonConvert.SerializeObject(publishResp));
+                            var stream = GenerateStreamFromString(message);
+
+                            var publishTask = iotData.PublishAsync(new PublishRequest { Topic = topic, Payload = stream });
+                            tasks.Add(publishTask);
+
+                            metricData.Add(
+                                new MetricDatum
+                                {
+                                    MetricName = "PR",
+                                    Dimensions = new List<Dimension>{
+                                 new Dimension{
+                                     Name = "PR",
+                                     Value = o.PR
+                                 }
+                                },
+                                    Timestamp = o.LT,
+                                    Value = Convert.ToDouble(o.PE)
+                                });
+                            metricData.Add(new MetricDatum {
+                                    MetricName = "PR|AR",
+                                    Dimensions = new List<Dimension> {
+                                        new Dimension{ Name = "PR", Value = o.PR },
+                                        new Dimension { Name = "AR", Value = o.AR}
+                                    },
+                                    Timestamp = o.LT,
+                                    Value = Convert.ToDouble(o.PE)                                    
+                                });
+                            metricData.Add(new MetricDatum
+                            {
+                                MetricName = "PR|AR|RE",
+                                Dimensions = new List<Dimension> {
+                                        new Dimension{ Name = "PR", Value = o.PR },
+                                        new Dimension { Name = "AR", Value = o.AR},
+                                        new Dimension { Name = "RE", Value = o.RE}
+                                    },
+                                Timestamp = o.LT,
+                                Value = Convert.ToDouble(o.PE)
+                            });
+                            metricData.Add(new MetricDatum
+                            {
+                                MetricName = "PR|AR|RE|RI",
+                                Dimensions = new List<Dimension> {
+                                        new Dimension{ Name = "PR", Value = o.PR },
+                                        new Dimension { Name = "AR", Value = o.AR},
+                                        new Dimension { Name = "RE", Value = o.RE},
+                                        new Dimension { Name = "RI", Value = o.RI}
+                                    },
+                                Timestamp = o.LT,
+                                Value = Convert.ToDouble(o.PE)
+                            });
+                            metricData.Add(new MetricDatum
+                            {
+                                MetricName = "PR|AR|RE|RI|FA",
+                                Dimensions = new List<Dimension> {
+                                        new Dimension{ Name = "PR", Value = o.PR },
+                                        new Dimension { Name = "AR", Value = o.AR},
+                                        new Dimension { Name = "RE", Value = o.RE},
+                                        new Dimension { Name = "RI", Value = o.RI},
+                                        new Dimension { Name = "FA", Value = o.FA}
+                                    },
+                                Timestamp = o.LT,
+                                Value = Convert.ToDouble(o.PE)
+                            });
+
+                            tasks.Add(cloudWatch.PutMetricDataAsync(new PutMetricDataRequest
+                            {
+                                Namespace = "SpotAnalytics",
+                                MetricData = metricData
+                            }));
+                        }
                     }
                 }
+                catch (Exception ex) {
+                    Console.WriteLine("ERROR WHILE PROCESSING Record!");
+                    Console.WriteLine(ex.Message);
+                    Console.WriteLine("POISON MESSAGE: " + JsonConvert.SerializeObject(record.Dynamodb));
+                    //throw;
+                }
+
             }
             await Task.WhenAll();
         }
@@ -110,9 +206,8 @@ namespace Functions
             var latestPrices = groups.Select(g => new { g.Key, Value = g.OrderByDescending(v => v.Timestamp).First() }).ToList();
 
 
-            //var facetsBatch = 
-
             DynamoDBContext context = new DynamoDBContext(dynamo);
+
             while (latestPrices.Count > 0)
             {
                 Console.WriteLine("Items Left: " + latestPrices.Count);
@@ -130,9 +225,6 @@ namespace Functions
                     var o = new FlatPriceObservation(new PriceObservation(r.Value, instanceType));
                     observationBatch.AddPutItem(o);
                 }
-
-
-
                 var observationWriteTask = observationBatch.ExecuteAsync();
                 await Task.WhenAll(observationWriteTask, Task.Delay(1000));
             }

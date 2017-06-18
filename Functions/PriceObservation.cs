@@ -17,7 +17,7 @@ namespace Functions
             AvailabilityZone = new AvailabilityZone(spotPrice.AvailabilityZone);
             Price = Convert.ToDecimal(String.Format("{0:0.0000}", Convert.ToDecimal(spotPrice.Price)));
             Timestamp = spotPrice.Timestamp.ToUniversalTime();
-            Product = spotPrice.ProductDescription;
+            Product = spotPrice.ProductDescription.Value.Replace("/", "-").Replace(" ", "-");
 
             PricePerCPU = Decimal.Parse(String.Format("{0:0.00000}", Price / InstanceType.CPU));
             PricePerECU = Decimal.Parse(String.Format("{0:0.00000}", Price / InstanceType.ECU));

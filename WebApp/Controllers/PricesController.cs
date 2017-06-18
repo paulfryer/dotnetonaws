@@ -27,9 +27,19 @@ namespace WebApp.Controllers
             this.ec2 = ec2;
             this.dynamo = dynamo;
         }
-        
-        [HttpGet]
+
+
         [HttpOptions]
+        [Route("{sortKey}")]
+        public async Task<IActionResult> Options(string sortKey)
+        {
+            return new ContentResult
+            {
+                StatusCode = 200
+            };
+        }
+
+        [HttpGet]
         [Route("{sortKey}")]
         public async Task<IActionResult> Index(string sortKey)
         {
