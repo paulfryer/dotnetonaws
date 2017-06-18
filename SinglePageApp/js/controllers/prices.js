@@ -2,8 +2,44 @@
 var AWS = require('aws-sdk');
 var dynamodb, s3;
 
-module.exports = function($scope, $location, $route, UtilityService) {
+require('angular-chart.js');
+
+module.exports = function($scope, $location, $route, $routeParams, UtilityService) {
     console.log("inside the prices controller.");
+
+
+
+Chart.scaleService.updateScaleDefaults('logarithmic', {
+    ticks: {
+        min: 0
+    }
+});
+
+  $scope.series = [];
+  $scope.data = [];
+  $scope.datasetOverride = [];
+  $scope.options = {
+  	tooltipTemplate: 'This is a test.',
+  	animation : false,
+  	scales: {
+  		xAxes: [
+  			{
+  				id: 'first-x-axis',
+  				type: 'linear',
+  				display: true
+  			}
+  		],
+  		yAxes: [
+  			{
+  				id: 'first-y-axis',
+  				type: 'logarithmic',
+  				display: true
+  				//position: 'bottom'
+  			}
+  		]
+  	}
+  }
+
 
 
     // Initialize the Amazon Cognito credentials provider
@@ -12,6 +48,12 @@ module.exports = function($scope, $location, $route, UtilityService) {
 	    IdentityPoolId: 'us-west-2:63111ab5-4710-4ae7-bcb8-a64fad4a9e0b',
 	});
 
+	$scope.prices = [];
+
+	$scope.rebuildPricesTable = function(){
+
+		$observations = $scope.prices;
+	}
 
     AWS.config.getCredentials(function(err) {
         if (err) console.log(err.stack); // credentials not loaded
@@ -27,11 +69,13 @@ module.exports = function($scope, $location, $route, UtilityService) {
                 policyName: 'SpotPriceAnalyticsSubscriber',
                 principal:  identityId
             };
+
             iot.attachPrincipalPolicy(params, function(err, data) {
                 if (err) console.log(err, err.stack);
-                else {
-                    console.log(data);
-                    iotConnect(AWS.config.credentials, AWS.config.region, "afczxfromx2vu.iot.us-west-2.amazonaws.com");
+                else {                	
+                    console.log(data);                    
+                    iotConnect(AWS.config.credentials, AWS.config.region, 
+                    	"afczxfromx2vu.iot.us-west-2.amazonaws.com");
                 }
             });
 
@@ -40,8 +84,9 @@ module.exports = function($scope, $location, $route, UtilityService) {
     });
 
 
-
         function iotConnect(credentials, region, host) {
+
+        	
 
             console.log("TRYNG TO CONNECT TO IOT");
 
@@ -109,9 +154,14 @@ module.exports = function($scope, $location, $route, UtilityService) {
 
             // called when the client connects
             function onConnect() {
+
                 // Once a connection has been made, make a subscription and send a message.
                 console.log("onConnect");
-                client.subscribe("prices");
+
+                var topicFilter = "prices/" + $routeParams.filter.replace(/\|/g, "/") + "/#";
+                console.log("Subscribing to: " + topicFilter);
+
+                client.subscribe(topicFilter);
             }
 
             // called when the client loses its connection
@@ -123,7 +173,40 @@ module.exports = function($scope, $location, $route, UtilityService) {
 
             // called when a message arrives
             function onMessageArrived(message) {
-                console.log("onMessageArrived:" + message.payloadString);
+            	var observation = JSON.parse(message.payloadString);
+                ///console.log(observation);
+                
+                var updated = false;
+                var i = 0;
+
+                if ($scope.series.indexOf(observation.SK) < 0)
+                {
+                	$scope.series.push(observation.SK); 
+                	$scope.data.push([]);
+                	$scope.datasetOverride.push({ yAxisID: 'first-y-axis', xAxisID: 'first-x-axis'});
+                }
+
+				//$scope.labels.push(new Date());
+                $scope.data[$scope.series.indexOf(observation.SK)].push({
+                	x: observation.PM, 
+                	y: observation.PE,
+                	r: parseInt(observation.PC * 100)
+                });
+
+                
+                $scope.prices.forEach(function(price){
+                	if (price.SK === observation.SK)
+                	{ 
+                		$scope.prices[i] = observation;
+                		updated = true;
+                	}
+                	i++;
+                })
+
+                if (updated === false)
+                	$scope.prices.push(observation);
+
+                $scope.$apply();
             }
 
         }
@@ -198,3 +281,4 @@ SigV4Utils.getSignedUrl = function(host, region, credentials) {
     var requestUrl = protocol + '://' + host + uri + '?' + canonicalQuerystring;
     return requestUrl;
 };
+
