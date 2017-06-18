@@ -8,7 +8,8 @@ module.exports = function($scope, $location, $route, $routeParams, UtilityServic
   var xhttp = new XMLHttpRequest();
   xhttp.onreadystatechange = function() {
     if (this.readyState == 4 && this.status == 200) {
-     console.log(this.responseText);
+        var resp = JSON.parse(this.responseText);
+        console.log(resp);
     }
   };
   xhttp.open("GET", url, true);

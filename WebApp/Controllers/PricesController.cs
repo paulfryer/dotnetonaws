@@ -161,14 +161,31 @@ namespace WebApp.Controllers
 
             await Task.WhenAll(statsTasks);
 
-            var respObj = new Dictionary<string, List<Stat>>();
+            var respObj = new List<StatObj>();
 
             foreach (var task in statsTasks) {
                 var k = dimensionValueMap[task.Id];
-                var v = task.Result.Datapoints.OrderBy(d => d.Timestamp)
-                    .Select(d => new Stat{ AV = Convert.ToDecimal(d.Average), TM = d.Timestamp })
-                    .ToList();
-                respObj.Add(k, v);
+
+                var stat = new StatObj
+                {
+                    CO = k,
+                    NA = Names.SingleOrDefault(d => d.Key == k).Value,
+                    ST = task.Result.Datapoints.OrderBy(d => d.Timestamp)
+                    .Select(d => new Stat { AV = Convert.ToDecimal(d.Average), TM = d.Timestamp })
+                    .ToList()
+                };
+
+                if (metricName.EndsWith("RI"))
+                {
+                    var search = $"{AR}-{RE}-{k}";
+                    stat.NA = Names.SingleOrDefault(d => d.Key == search).Value;
+                }
+
+                if (string.IsNullOrEmpty(stat.NA))
+                    stat.NA = stat.CO;
+                
+
+                respObj.Add(stat);
        
             }
 
@@ -180,9 +197,70 @@ namespace WebApp.Controllers
             };
         }
 
+        public class StatObj {
+            public string NA { get; set; }
+            public string CO { get; set; }
+            public List<Stat> ST { get; set; }
+        }
+
         public class Stat {
             public decimal AV { get; set;}
             public DateTime TM { get; set; }
+        }
+
+        public Dictionary<string, string> Names
+        {
+            get
+            {
+                return new Dictionary<string, string> {
+                    {"Linux-UNIX", "Linux Unix" },
+                    {"SUSE-Linux", "SUSE Linux" },
+                    {"Windows", "Windows" },
+                    {"ca", "Canada" },
+                    {"eu", "Europe" },
+                    {"ap", "Asia Pacific" },
+                    {"sa", "South America" },
+                    {"us", "United States" },
+                    {"east", "East" },
+                    {"west", "West" },
+                    {"southeast", "South East" },
+                    {"northeast", "North East" },
+                    {"northwest", "North West" },
+                    {"southwest", "South West" },
+                    {"north", "North" },
+                    {"south", "South" },
+
+                    {"us-west-1", "N. California" },
+                    {"us-west-2", "Oregon" },
+                    {"us-east-1", "N. Virginia" },
+                    {"us-east-2", "Ohio" },
+                    {"ap-south-1", "Mumbai" },
+                    {"ap-northeast-2", "Seoul" },
+                    {"ap-southeast-1", "Singapore" },
+                    {"ap-southeast-2", "Syndey" },
+                    {"ap-northeast-1", "Tokyo" },
+                    {"eu-central-1", "Frankfurt" },
+                    {"eu-west-1", "Ireland" },
+                    {"eu-west-2", "London" },
+                    {"sa-east-1", "São Paulo" },
+
+                    {"t", "General Purpose Burstable"},
+                    {"m", "General Purpose" },
+                    {"c", "Compute Optimized"},
+                    {"cc", "Compute Optimized" },
+                    {"cg", "Accelerated Computing" },
+                    {"hi", "Storage Optimized" },
+                    {"hs", "Storage Optimized" },
+                    {"x", "Extreem Memory Optimized"},
+                    {"r", "Memory Optimized" },
+                    {"p", "General Purpose GPU" },
+                    {"g", "Graphics Optimized" },
+                    {"f", "FPGA Optimized" },
+                    {"i", "Storage Optimized" },
+                    {"d", "Dense Storage" },
+                    {"cr", "Cluster Networking" }
+                };
+            }
         }
 
         /*
