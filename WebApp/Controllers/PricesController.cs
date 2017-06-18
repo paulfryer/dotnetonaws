@@ -28,9 +28,58 @@ namespace WebApp.Controllers
             this.dynamo = dynamo;
         }
 
+        [HttpOptions]
+        [HttpGet]
+        [Route("{PR}")]
+        public async Task<IActionResult> Get(string PR)
+        {
+            return await GetAny(PR);
+        }
 
+        [HttpOptions]
+        [HttpGet]
+        [Route("{PR}/{AR}")]
+        public async Task<IActionResult> Get(string PR,string AR)
+        {
+            return await GetAny(PR,AR);
+        }
 
+        [HttpOptions]
+        [HttpGet]
+        [Route("{PR}/{AR}/{RE}")]
+        public async Task<IActionResult> Get(string PR, string AR, string RE)
+        {
+            return await GetAny(PR, AR, RE);
+        }
 
+        [HttpOptions]
+        [HttpGet]
+        [Route("{PR}/{AR}/{RE}/{RI}")]
+        public async Task<IActionResult> Get(string PR, string AR, string RE, string RI)
+        {
+            return await GetAny(PR, AR, RE, RI);
+        }
+
+        [HttpOptions]
+        [HttpGet]
+        [Route("{PR}/{AR}/{RE}/{RI}/{FA}")]
+        public async Task<IActionResult> GetAny(string PR, string AR = null, string RE = null, string RI = null, string FA = null)
+        {
+            Response.Headers.Add("Access-Control-Allow-Origin", "*");
+            if (Request.Method == "OPTIONS")
+            {                
+                return new ContentResult { StatusCode = 200 };
+            }
+
+            return new ContentResult
+            {
+                Content = "<html><body><h3>" + PR + AR + "</h3></body></html>",
+                ContentType = "text/html",
+                StatusCode = 400
+            };
+        }
+
+        /*
         [HttpOptions]
         [HttpGet]
         [Route("{sortKey}")]
@@ -74,7 +123,7 @@ namespace WebApp.Controllers
 
 
         [HttpGet]
-        [Route("")]
+        [Route("TODOFILLTHISOUThistory")]
         public async Task<IActionResult> Index()
         {
             var resp = await ec2.DescribeSpotPriceHistoryAsync();
@@ -85,6 +134,6 @@ namespace WebApp.Controllers
                 StatusCode = 200
             };
 
-        }
+        }*/
     }
 }
