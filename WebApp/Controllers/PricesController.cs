@@ -84,47 +84,73 @@ namespace WebApp.Controllers
             }
 
             string metricName = "PR";
+            
+            var listMetricsReq = new ListMetricsRequest
+            {
+                Namespace = "SpotAnalytics",
+                Dimensions = new List<DimensionFilter>()
+            };
 
-            if (!string.IsNullOrEmpty(AR)) {
+            if (!string.IsNullOrEmpty(PR)) {
                 metricName += "|AR";
+                listMetricsReq.Dimensions.Add(new DimensionFilter { Name = "PR", Value = PR });              
+            }
+            if (!string.IsNullOrEmpty(AR)) {
+                metricName += "|RE";
+                listMetricsReq.Dimensions.Add(new DimensionFilter { Name = "AR", Value = AR });
+            }
+            if (!string.IsNullOrEmpty(RE)) {
+                metricName += "|RI";
+                listMetricsReq.Dimensions.Add(new DimensionFilter { Name = "RE", Value = RE });
+            }
+            if (!string.IsNullOrEmpty(RI))
+            {
+                metricName += "|FA";
+                listMetricsReq.Dimensions.Add(new DimensionFilter { Name = "RI", Value = RI });
             }
 
-            var resp = await cloudWatch.ListMetricsAsync(new ListMetricsRequest
-            {
-                MetricName = metricName,
-                Namespace = "SpotAnalytics",
-                Dimensions = new List<DimensionFilter> { new DimensionFilter {Name = metricName } }
-            });
+            listMetricsReq.MetricName = metricName;
+
+            var resp = await cloudWatch.ListMetricsAsync(listMetricsReq);
 
             var statsTasks = new List<Task<GetMetricStatisticsResponse>>();
 
-            var metricValueMap = new Dictionary<int, string>();
+            var dimensionValueMap = new Dictionary<int, string>();
 
             foreach (var metric in resp.Metrics)
-                foreach (var dimension in metric.Dimensions)
+            {
+                var getStatsReq = new GetMetricStatisticsRequest
                 {
-                    var statsTask = cloudWatch.GetMetricStatisticsAsync(new GetMetricStatisticsRequest {
-                        Dimensions = new List<Dimension> {  dimension   },
-                        EndTime = DateTime.UtcNow,
-                        StartTime = DateTime.UtcNow.Subtract(TimeSpan.FromHours(1)),
-                        MetricName = metricName,
-                        Namespace = "SpotAnalytics",
-                        Period = Convert.ToInt32(TimeSpan.FromMinutes(5).TotalSeconds),
-                        Statistics = new List<string> { "Average"}
-                    });
-                    metricValueMap.Add(statsTask.Id, dimension.Value);
-                    statsTasks.Add(statsTask);
-                }
+                    Dimensions = new List<Dimension>(),
+                    EndTime = DateTime.UtcNow,
+                    StartTime = DateTime.UtcNow.Subtract(TimeSpan.FromHours(1)),
+                    MetricName = metricName,
+                    Namespace = "SpotAnalytics",
+                    Period = Convert.ToInt32(TimeSpan.FromMinutes(5).TotalSeconds),
+                    Statistics = new List<string> { "Average" }
+                };
+
+                foreach (var dimension in metric.Dimensions)
+                    getStatsReq.Dimensions.Add(dimension);
+                
+                var statsTask = cloudWatch.GetMetricStatisticsAsync(getStatsReq);
+                var mapValue = metric.Dimensions.Single(d => d.Name == metricName.Substring(metricName.Length - 2, 2)).Value;
+                dimensionValueMap.Add(statsTask.Id, mapValue);
+                statsTasks.Add(statsTask);
+            }
 
 
             await Task.WhenAll(statsTasks);
 
-            var respObj = new Dictionary<string, List<Datapoint>>();
+            var respObj = new Dictionary<string, List<Stat>>();
 
             foreach (var task in statsTasks) {
-                var dimensionValue = metricValueMap[task.Id];
-                respObj.Add(dimensionValue, task.Result.Datapoints.OrderBy(d => d.Timestamp).ToList());
-
+                var k = dimensionValueMap[task.Id];
+                var v = task.Result.Datapoints.OrderBy(d => d.Timestamp)
+                    .Select(d => new Stat{ AV = Convert.ToDecimal(d.Average), TM = d.Timestamp })
+                    .ToList();
+                respObj.Add(k, v);
+       
             }
 
             return new ContentResult
@@ -133,6 +159,11 @@ namespace WebApp.Controllers
                 ContentType = "application/json",
                 StatusCode = 200
             };
+        }
+
+        public class Stat {
+            public decimal AV { get; set;}
+            public DateTime TM { get; set; }
         }
 
         /*
