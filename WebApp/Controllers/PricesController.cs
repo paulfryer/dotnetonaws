@@ -79,9 +79,15 @@ namespace WebApp.Controllers
         {
             Response.Headers.Add("Access-Control-Allow-Origin", "*");
             if (Request.Method == "OPTIONS")
-            {                
+            {
                 return new ContentResult { StatusCode = 200 };
             }
+
+            var respObj = new RespObj
+            {
+                IT = new List<dynamic>(),
+                NM = new Dictionary<string, string>()
+            };
 
             string metricName = "PR";
             
@@ -93,22 +99,29 @@ namespace WebApp.Controllers
 
             if (!string.IsNullOrEmpty(PR)) {
                 metricName += "|AR";
-                listMetricsReq.Dimensions.Add(new DimensionFilter { Name = "PR", Value = PR });              
+                listMetricsReq.Dimensions.Add(new DimensionFilter { Name = "PR", Value = PR });
+                respObj.NM.Add("PR", Names[PR]);
             }
             if (!string.IsNullOrEmpty(AR)) {
                 metricName += "|RE";
                 listMetricsReq.Dimensions.Add(new DimensionFilter { Name = "AR", Value = AR });
+                respObj.NM.Add("AR", Names[AR]);
             }
             if (!string.IsNullOrEmpty(RE)) {
                 metricName += "|RI";
                 listMetricsReq.Dimensions.Add(new DimensionFilter { Name = "RE", Value = RE });
+                respObj.NM.Add("RE", Names[RE]);
             }
             if (!string.IsNullOrEmpty(RI))
             {
                 metricName += "|FA";
                 listMetricsReq.Dimensions.Add(new DimensionFilter { Name = "RI", Value = RI });
+                respObj.NM.Add("RI", Names[$"{AR}-{RE}-{RI}"]);
             }
             if (!string.IsNullOrEmpty(FA)) {
+
+                respObj.NM.Add("FA", Names[FA]);
+
                 var sortKey = WebUtility.UrlDecode($"{PR}|{AR}|{RE}|{RI}|{FA}");
                 DynamoDBContext context = new DynamoDBContext(dynamo);
 
@@ -120,9 +133,13 @@ namespace WebApp.Controllers
                 var resp2 = await search.GetNextSetAsync();
 
                 var observations = context.FromDocuments<FlatPriceObservation>(resp2).OrderBy(o => o.PE).Take(100);
+
+                foreach (var ob in observations)
+                    respObj.IT.Add(ob);
+
                 return new ContentResult
                 {
-                    Content = JsonConvert.SerializeObject(observations),
+                    Content = JsonConvert.SerializeObject(respObj),
                     ContentType = "application/json",
                     StatusCode = 200
                 };
@@ -161,7 +178,7 @@ namespace WebApp.Controllers
 
             await Task.WhenAll(statsTasks);
 
-            var respObj = new List<StatObj>();
+           
 
             foreach (var task in statsTasks) {
                 var k = dimensionValueMap[task.Id];
@@ -185,7 +202,7 @@ namespace WebApp.Controllers
                     stat.NA = stat.CO;
                 
 
-                respObj.Add(stat);
+                respObj.IT.Add(stat);
        
             }
 
@@ -195,6 +212,11 @@ namespace WebApp.Controllers
                 ContentType = "application/json",
                 StatusCode = 200
             };
+        }
+
+        public class RespObj {
+            public Dictionary<string, string> NM { get; set; }
+            public List<dynamic> IT { get; set; }
         }
 
         public class StatObj {
