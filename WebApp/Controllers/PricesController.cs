@@ -29,30 +29,28 @@ namespace WebApp.Controllers
         }
 
 
-        [HttpOptions]
-        [Route("{sortKey}")]
-        public async Task<IActionResult> Options(string sortKey)
-        {
-            return new ContentResult
-            {
-                StatusCode = 200
-            };
-        }
 
+
+        [HttpOptions]
         [HttpGet]
         [Route("{sortKey}")]
         public async Task<IActionResult> Index(string sortKey)
         {
+            if (Request.Method == "OPTIONS") {
+                Response.Headers.Add("Access-Control-Allow-Origin", "*");
+                return new ContentResult { StatusCode = 200 }; 
+            }
+
             try
             {
                 sortKey = WebUtility.UrlDecode(sortKey);
                 DynamoDBContext context = new DynamoDBContext(dynamo);
-                
-				string tableName = "SpotPrice";
-				Table table = Table.LoadTable(dynamo, tableName);
-                
+
+                string tableName = "SpotPrice";
+                Table table = Table.LoadTable(dynamo, tableName);
+
                 var search = table.Query("PR|AR|RE|RI|FA|GE|SI|AZ", new QueryFilter("SK", QueryOperator.BeginsWith, sortKey));
-                               
+
                 var resp2 = await search.GetNextSetAsync();
 
                 var observations = context.FromDocuments<FlatPriceObservation>(resp2).OrderBy(o => o.PE).Take(100);
@@ -88,7 +86,5 @@ namespace WebApp.Controllers
             };
 
         }
-
-
     }
 }

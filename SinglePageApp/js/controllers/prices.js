@@ -3,6 +3,19 @@ var cloudwatch = new AWS.CloudWatch();
 
 module.exports = function($scope, $location, $route, $routeParams, UtilityService) {
   
+    var url = "https://spot.octank.biz/api/prices/Windows";
+
+  var xhttp = new XMLHttpRequest();
+  xhttp.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+     document.getElementById("demo").innerHTML = this.responseText;
+    }
+  };
+  xhttp.open("GET", url, true);
+  xhttp.send();
+
+
+
     var now = new Date();
     var startDate = new Date();
     startDate.setHours(startDate.getHours() - 1);
