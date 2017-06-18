@@ -85,14 +85,16 @@ namespace WebApp.Controllers
 
             var respObj = new RespObj
             {
+                PA = "",
                 IT = new List<dynamic>(),
                 NM = new Dictionary<string, string>()
             };
 
+          
             string metricName = "PR";
             
             var listMetricsReq = new ListMetricsRequest
-            {
+            {                
                 Namespace = "SpotAnalytics",
                 Dimensions = new List<DimensionFilter>()
             };
@@ -101,26 +103,31 @@ namespace WebApp.Controllers
                 metricName += "|AR";
                 listMetricsReq.Dimensions.Add(new DimensionFilter { Name = "PR", Value = PR });
                 respObj.NM.Add("PR", Names[PR]);
+                respObj.PA += PR;
             }
             if (!string.IsNullOrEmpty(AR)) {
                 metricName += "|RE";
                 listMetricsReq.Dimensions.Add(new DimensionFilter { Name = "AR", Value = AR });
                 respObj.NM.Add("AR", Names[AR]);
+                respObj.PA += "|" + AR;
             }
             if (!string.IsNullOrEmpty(RE)) {
                 metricName += "|RI";
                 listMetricsReq.Dimensions.Add(new DimensionFilter { Name = "RE", Value = RE });
                 respObj.NM.Add("RE", Names[RE]);
+                respObj.PA += "|" + RE;
             }
             if (!string.IsNullOrEmpty(RI))
             {
                 metricName += "|FA";
                 listMetricsReq.Dimensions.Add(new DimensionFilter { Name = "RI", Value = RI });
                 respObj.NM.Add("RI", Names[$"{AR}-{RE}-{RI}"]);
+                respObj.PA += "|" + RI;
             }
             if (!string.IsNullOrEmpty(FA)) {
 
                 respObj.NM.Add("FA", Names[FA]);
+                respObj.PA += "|" + FA;
 
                 var sortKey = WebUtility.UrlDecode($"{PR}|{AR}|{RE}|{RI}|{FA}");
                 DynamoDBContext context = new DynamoDBContext(dynamo);
@@ -215,6 +222,7 @@ namespace WebApp.Controllers
         }
 
         public class RespObj {
+            public string PA { get; set; }
             public Dictionary<string, string> NM { get; set; }
             public List<dynamic> IT { get; set; }
         }

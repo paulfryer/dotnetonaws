@@ -29,9 +29,8 @@
         <h1>Prices</h1>
 
         <table>
-        <tr ng-repeat="price in prices | orderBy:'PE'">
-            <td>{{price.SK}}</td>
-            <td>{{price.PE}}</td>
+        <tr ng-repeat="item in resp.IT">
+            <td><a ng-href="|{{item.CO}}">{{item.NA}}</a></td>
         </tr>
         </table>
 
