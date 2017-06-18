@@ -13,6 +13,8 @@ using System.Net;
 using Functions;
 using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2.DocumentModel;
+using Amazon.CloudWatch;
+using Amazon.CloudWatch.Model;
 
 namespace WebApp.Controllers
 {
@@ -22,10 +24,20 @@ namespace WebApp.Controllers
         IAmazonEC2 ec2;
         IAmazonDynamoDB dynamo;
 
+        AmazonCloudWatchClient cloudWatch = new AmazonCloudWatchClient();
+
         public PricesController(IAmazonEC2 ec2, IAmazonDynamoDB dynamo)
         {
             this.ec2 = ec2;
             this.dynamo = dynamo;
+        }
+
+        [HttpOptions]
+        [HttpGet]
+        [Route("")]
+        public async Task<IActionResult> Get()
+        {
+            return await GetAny();
         }
 
         [HttpOptions]
@@ -63,7 +75,7 @@ namespace WebApp.Controllers
         [HttpOptions]
         [HttpGet]
         [Route("{PR}/{AR}/{RE}/{RI}/{FA}")]
-        public async Task<IActionResult> GetAny(string PR, string AR = null, string RE = null, string RI = null, string FA = null)
+        public async Task<IActionResult> GetAny(string PR = null, string AR = null, string RE = null, string RI = null, string FA = null)
         {
             Response.Headers.Add("Access-Control-Allow-Origin", "*");
             if (Request.Method == "OPTIONS")
@@ -71,11 +83,55 @@ namespace WebApp.Controllers
                 return new ContentResult { StatusCode = 200 };
             }
 
+            string metricName = "PR";
+
+            if (!string.IsNullOrEmpty(AR)) {
+                metricName += "|AR";
+            }
+
+            var resp = await cloudWatch.ListMetricsAsync(new ListMetricsRequest
+            {
+                MetricName = metricName,
+                Namespace = "SpotAnalytics",
+                Dimensions = new List<DimensionFilter> { new DimensionFilter {Name = metricName } }
+            });
+
+            var statsTasks = new List<Task<GetMetricStatisticsResponse>>();
+
+            var metricValueMap = new Dictionary<int, string>();
+
+            foreach (var metric in resp.Metrics)
+                foreach (var dimension in metric.Dimensions)
+                {
+                    var statsTask = cloudWatch.GetMetricStatisticsAsync(new GetMetricStatisticsRequest {
+                        Dimensions = new List<Dimension> {  dimension   },
+                        EndTime = DateTime.UtcNow,
+                        StartTime = DateTime.UtcNow.Subtract(TimeSpan.FromHours(1)),
+                        MetricName = metricName,
+                        Namespace = "SpotAnalytics",
+                        Period = Convert.ToInt32(TimeSpan.FromMinutes(5).TotalSeconds),
+                        Statistics = new List<string> { "Average"}
+                    });
+                    metricValueMap.Add(statsTask.Id, dimension.Value);
+                    statsTasks.Add(statsTask);
+                }
+
+
+            await Task.WhenAll(statsTasks);
+
+            var respObj = new Dictionary<string, List<Datapoint>>();
+
+            foreach (var task in statsTasks) {
+                var dimensionValue = metricValueMap[task.Id];
+                respObj.Add(dimensionValue, task.Result.Datapoints.OrderBy(d => d.Timestamp).ToList());
+
+            }
+
             return new ContentResult
             {
-                Content = "<html><body><h3>" + PR + AR + "</h3></body></html>",
-                ContentType = "text/html",
-                StatusCode = 400
+                Content = JsonConvert.SerializeObject(respObj),
+                ContentType = "application/json",
+                StatusCode = 200
             };
         }
 
