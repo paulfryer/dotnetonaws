@@ -3,6 +3,9 @@ var cloudwatch = new AWS.CloudWatch();
 
 module.exports = function($scope, $location, $route, $routeParams, UtilityService) {
   
+
+    
+
     var url = "https://spot.octank.biz/api/prices";
 
   var xhttp = new XMLHttpRequest();

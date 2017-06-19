@@ -259,6 +259,7 @@ namespace WebApp.Controllers
                     {"southwest", "South West" },
                     {"north", "North" },
                     {"south", "South" },
+                    {"central", "Central" },
 
                     {"us-west-1", "N. California" },
                     {"us-west-2", "Oregon" },
@@ -273,6 +274,7 @@ namespace WebApp.Controllers
                     {"eu-west-1", "Ireland" },
                     {"eu-west-2", "London" },
                     {"sa-east-1", "São Paulo" },
+                    {"ca-central-1", "Canada"},
 
                     {"t", "General Purpose Burstable"},
                     {"m", "General Purpose" },

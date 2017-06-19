@@ -13,13 +13,12 @@
       
   <div>
 
-
-<canvas id="base" 
-  class="chart-bubble" 
-  chart-options="options"
-  chart-dataset-override="datasetOverride"
-  chart-data="data"
-  chart-series="series">
+<canvas id="line" 
+class="chart chart-line"
+chart-data="data"
+chart-series="series" 
+chart-options="options"
+chart-dataset-override="datasetOverride">
 </canvas>
   
   </div>
@@ -30,7 +29,7 @@
 
         <table>
         <tr ng-repeat="item in resp.IT">
-            <td><a ng-href="|{{item.CO}}">{{item.NA}}</a></td>
+            <td><a href="/#!/prices/{{resp.PA}}|{{item.CO}}">{{item.NA}}</a></td>
         </tr>
         </table>
 
