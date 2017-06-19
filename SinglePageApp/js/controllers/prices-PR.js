@@ -1,11 +1,17 @@
 require('chart.js');
 
 module.exports = function($scope, $location, $route, $routeParams, UtilityService) {
-
+    var url = "https://spot.octank.biz/api/prices" 
     var sortKey = $routeParams.PR;
-    sortKey = sortKey.replace(/\|/g, "/");
+    if (sortKey)
+    {
+        sortKey = sortKey.replace(/\|/g, "/");
+        url += "/" + sortKey;
+    }
+        
+    
 
-    var url = "https://spot.octank.biz/api/prices/" + sortKey;
+   
 
   var xhttp = new XMLHttpRequest();
   xhttp.onreadystatechange = function() {
@@ -23,7 +29,10 @@ module.exports = function($scope, $location, $route, $routeParams, UtilityServic
             $scope.names[$scope.codes[i]] = { Path: path, Name: $scope.resp.NM[code] };
             i++;
         }       
-        console.log($scope.names);
+
+        if ($scope.resp.PA)
+            $scope.resp.PA += "|";
+
         $scope.$apply();
     }
   };

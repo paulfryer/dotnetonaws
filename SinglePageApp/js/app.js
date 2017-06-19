@@ -18,8 +18,8 @@ app.config([
     function($route) {
         $route.
             when('/prices', {
-                templateUrl: 'html/prices.html',
-                controller: 'PricesController'
+                templateUrl: 'html/prices-PR.html',
+                controller: 'PricesPRController'
             }).
             when('/prices/:PR', {
                 templateUrl: 'html/prices-PR.html',
