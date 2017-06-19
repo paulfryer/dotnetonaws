@@ -283,7 +283,7 @@ namespace WebApp.Controllers
                     {"cg", "Accelerated Computing" },
                     {"hi", "Storage Optimized" },
                     {"hs", "Storage Optimized" },
-                    {"x", "Extreem Memory Optimized"},
+                    {"x", "Extreme Memory Optimized"},
                     {"r", "Memory Optimized" },
                     {"p", "General Purpose GPU" },
                     {"g", "Graphics Optimized" },
