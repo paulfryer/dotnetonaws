@@ -2,45 +2,34 @@
 
 
 <div class="container-fluid">
+  
   <div class="row">
+
     <div class="col-md-2">
-      <!--Sidebar content--> 
-
-        <h2><a href="/#!/products">Products</a></h2>
-
+      <h2>
+        <span ng-repeat="code in codes">
+          <a href=''>{{names[code]}}</a>
+        </span>
+      </h2>
     </div>
 
-      
+    <table>
+      <tr>
+        <td style="vertical-align: top;">
+          <table>
+            <tr ng-repeat="item in resp.IT">
+                <td><a href="/#!/prices/{{resp.PA}}|{{item.CO}}">{{item.NA}}</a></td>
+            </tr>
+          </table>
+        </td>
+        <td>
+          <div style="height:200px; width:800px;">
+            <canvas class="chart chart-line" chart-data="data" chart-series="series" chart-options="options"></canvas>
+          </div>
+        </td>
+      </tr>
+    </table>
+
   <div>
-
-  <div google-chart chart="myChartObject" style="{{cssStyle}}"></div>
-
-
-<canvas id="line" 
-class="chart chart-line"
-chart-data="data"
-chart-series="series" 
-chart-options="options"
-chart-dataset-override="datasetOverride">
-</canvas>
-  
-  </div>
-
-
-      <div>
-        <h1>Prices</h1>
-
-        <table>
-        <tr ng-repeat="item in resp.IT">
-            <td><a href="/#!/prices/{{resp.PA}}|{{item.CO}}">{{item.NA}}</a></td>
-        </tr>
-        </table>
-
-      </div>
-
-
-
-
-  </div>
 </div>
 
