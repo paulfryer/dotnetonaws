@@ -7,8 +7,9 @@
 
     <div class="col-md-2">
       <h2>
+        <span><a href="/#!/prices">Products</a></span>
         <span ng-repeat="code in codes">
-          <a href=''>{{names[code]}}</a>
+          <a href='{{names[code].Path}}'>{{names[code].Name}}</a>
         </span>
       </h2>
     </div>

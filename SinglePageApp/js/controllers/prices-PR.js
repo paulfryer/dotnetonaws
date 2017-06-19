@@ -17,8 +17,10 @@ module.exports = function($scope, $location, $route, $routeParams, UtilityServic
         $scope.names = {};
 
         var i = 0;
+        var path = "/#!/prices/";
         for(var code in $scope.resp.NM){
-            $scope.names[$scope.codes[i]] = $scope.resp.NM[code];
+            path += $scope.codes[i] + "|";
+            $scope.names[$scope.codes[i]] = { Path: path, Name: $scope.resp.NM[code] };
             i++;
         }       
         console.log($scope.names);

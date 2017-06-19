@@ -195,7 +195,7 @@ namespace WebApp.Controllers
                     CO = k,
                     NA = Names.SingleOrDefault(d => d.Key == k).Value,
                     ST = task.Result.Datapoints.OrderBy(d => d.Timestamp)
-                    .Select(d => new Stat { AV = Convert.ToDecimal(d.Average), TM = d.Timestamp })
+                    .Select(d => new Stat { AV = Convert.ToDecimal(String.Format("{0:0.00000}", d.Average)), TM = d.Timestamp })
                     .ToList()
                 };
 
