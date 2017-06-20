@@ -78,6 +78,7 @@ namespace WebApp.Controllers
         public async Task<IActionResult> GetAny(string PR = null, string AR = null, string RE = null, string RI = null, string FA = null)
         {
             Response.Headers.Add("Access-Control-Allow-Origin", "*");
+            Response.Headers.Add("Cache-Control", "60");
             if (Request.Method == "OPTIONS")
             {
                 return new ContentResult { StatusCode = 200 };

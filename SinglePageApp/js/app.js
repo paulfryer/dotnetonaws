@@ -25,7 +25,7 @@ app.config([
                 templateUrl: 'html/prices-PR.html',
                 controller: 'PricesPRController'
             }).
-            when('/prices/:PR/:AR', {
+            when('/prices/:PR/live', {
                 templateUrl: 'html/prices-PR-AR.html',
                 controller: 'PricesPRARController'
             }).

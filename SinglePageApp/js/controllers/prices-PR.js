@@ -24,10 +24,14 @@ module.exports = function($scope, $location, $route, $routeParams, UtilityServic
 
         var i = 0;
         var path = "/#!/prices/";
+        $scope.nextLive = "";
         for(var code in $scope.resp.NM){
+            if (code == "RI")
+              $scope.nextLive = "/live";
             path += $scope.codes[i] + "|";
             $scope.names[$scope.codes[i]] = { Path: path, Name: $scope.resp.NM[code] };
             i++;
+
         }       
 
         if ($scope.resp.PA)
@@ -38,7 +42,6 @@ module.exports = function($scope, $location, $route, $routeParams, UtilityServic
   };
   xhttp.open("GET", url, true);
   xhttp.send();
-
 
   function loadChart(){
     $scope.series = [];
