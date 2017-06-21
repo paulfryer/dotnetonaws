@@ -6,7 +6,7 @@ module.exports = function($scope, $location, $route, $routeParams, UtilityServic
 
     
 
-    var url = "https://spot.octank.biz/api/prices";
+    var url = "https://sa.octank.biz/api/prices";
 
   var xhttp = new XMLHttpRequest();
   xhttp.onreadystatechange = function() {
