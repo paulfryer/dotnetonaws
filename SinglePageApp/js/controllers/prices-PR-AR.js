@@ -4,7 +4,7 @@ module.exports = function($scope, $location, $route, $routeParams, UtilityServic
     var url = "https://sa.octank.biz/api/prices" 
     var sortKey = $routeParams.PR;
     if (sortKey)
-    {
+    { 
         sortKey = sortKey.replace(/\|/g, "/");
         url += "/" + sortKey;
     }
