@@ -1,7 +1,7 @@
 require('chart.js');
 
 module.exports = function($scope, $location, $route, $routeParams, UtilityService) {
-    var url = "https://spot.octank.biz/api/prices" 
+    var url = "https://sa.octank.biz/api/prices" 
     var sortKey = $routeParams.PR;
     if (sortKey)
     {

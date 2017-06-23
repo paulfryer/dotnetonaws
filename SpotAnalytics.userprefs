@@ -1,0 +1,18 @@
+﻿<Properties StartupConfiguration="{353B5C21-220D-4C5D-91B5-E29C6DD886E3}|Default">
+  <MonoDevelop.Ide.Workbench ActiveDocument="Functions/EMRController.cs">
+    <Files>
+      <File FileName="Functions/EMRController.cs" Line="1" Column="1" />
+      <File FileName="WebApp/Views/Home/Index.cshtml" Line="1" Column="1" />
+      <File FileName="WebApp/Controllers/HomeController.cs" Line="13" Column="10" />
+      <File FileName="WebApp/Controllers/PricesController.cs" Line="84" Column="14" />
+      <File FileName="WebApp/serverless-template.json" Line="27" Column="11" />
+    </Files>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore />
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MonoDevelop.Ide.ItemProperties.WebApp PreferredExecutionTarget="MonoDevelop.Default" />
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+  <MultiItemStartupConfigurations />
+</Properties>
