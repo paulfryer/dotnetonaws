@@ -1,18 +1,24 @@
-﻿<Properties StartupConfiguration="{353B5C21-220D-4C5D-91B5-E29C6DD886E3}|Default">
-  <MonoDevelop.Ide.Workbench ActiveDocument="Functions/EMRController.cs">
+﻿<Properties StartupConfiguration="{FEF6EDBA-1304-46CD-8A5E-EBCBA01E89E2}|Default">
+  <MonoDevelop.Ide.Workbench ActiveDocument="dotnetonaws Status">
     <Files>
-      <File FileName="Functions/EMRController.cs" Line="1" Column="1" />
-      <File FileName="WebApp/Views/Home/Index.cshtml" Line="1" Column="1" />
-      <File FileName="WebApp/Controllers/HomeController.cs" Line="13" Column="10" />
-      <File FileName="WebApp/Controllers/PricesController.cs" Line="84" Column="14" />
-      <File FileName="WebApp/serverless-template.json" Line="27" Column="11" />
+      <File FileName="Functions/BigFileController.cs" Line="1" Column="1" />
+      <File FileName="Functions/EMRController.cs" Line="19" Column="60" />
+      <File FileName="Functions/FlickrImageController.cs" Line="40" Column="5" />
+      <File FileName="Functions/Program.cs" Line="22" Column="1" />
+      <File FileName="dotnetonaws Status" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
-    <BreakpointStore />
+    <BreakpointStore>
+      <Breakpoint file="/Users/pfryer/Projects/dotnetonaws/Functions/EMRController.cs" relfile="Functions/EMRController.cs" line="36" column="1" />
+      <Breakpoint file="/Users/pfryer/Projects/dotnetonaws/Functions/FlickrImageController.cs" relfile="Functions/FlickrImageController.cs" line="45" column="47" />
+    </BreakpointStore>
   </MonoDevelop.Ide.DebuggingService.Breakpoints>
   <MonoDevelop.Ide.ItemProperties.WebApp PreferredExecutionTarget="MonoDevelop.Default" />
-  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches>
+    <Watch file="Functions/FlickrImageController.cs" line="44" offsetX="465" offsetY="645" expression="obj" liveUpdate="False" />
+  </MonoDevelop.Ide.DebuggingService.PinnedWatches>
   <MultiItemStartupConfigurations />
+  <MonoDevelop.Ide.ItemProperties.Functions PreferredExecutionTarget="MonoDevelop.Default" />
 </Properties>
