@@ -17,14 +17,14 @@
     <table>
       <tr>
         <td style="vertical-align: top;">
-          <table>
+          <table class="left-navigation">
             <tr ng-repeat="item in resp.IT">
                 <td><a href="/#!/prices/{{resp.PA}}{{item.CO}}{{nextLive}}">{{item.NA}}</a></td>
             </tr>
           </table>
         </td>
         <td>
-          <div style="height:200px; width:800px;">
+          <div class="price-group">
             <canvas class="chart chart-line" chart-data="data" chart-series="series" chart-options="options"></canvas>
           </div>
         </td>

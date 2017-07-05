@@ -1,100 +1,43 @@
 /* app css stylesheet */
 
 body {
-  padding-top: 20px;
+  margin: 0px;
 }
 
 
-.camera-images {
-  background-color: white;
-  width: 900px;
-  height: 900px;
-  overflow: hidden;
-  position: relative;
-  float: left;
+.view-container {
+  font-family: Arial, Helvetica, sans-serif;
+  margin: 10px;
+
 }
 
-.es {
-  list-style: none;
+.left-navigation{
+  padding: 10px;
+  background-color: whitesmoke;
+  border-spacing: 10px;
+  border-style: solid;
+  border-color: black;
 }
 
-.thumb {
-  float: left;
-  margin: -0.5em 1em 1.5em 0;
-  padding-bottom: 1em;
+
+.header{
+    background-color: black;
+    border-style: solid;
+    border-bottom: thick solid #ffe123;
+}
+
+.header-image{
   height: 100px;
-  width: 100px;
 }
 
-
-.cameras li {
-  clear: both;
-  height: 115px;
-  padding-top: 15px;
+.price-group {
+height:600px; 
+width:800px;
+ padding: 15px;
 }
 
-/** Detail View **/
-img.camera {
-  float: left;
-  margin-right: 3em;
-  margin-bottom: 2em;
-  background-color: white;
-  padding: 2em;
-  height: 400px;
-  width: 400px;
-  display: none;
-}
-
-img.camera:first-child {
-  display: block;
-}
-
-
-ul.camera-thumbs {
-  margin: 0;
-  list-style: none;
-}
-
-ul.camera-thumbs li {
-  border: 1px solid black;
-  display: inline-block;
-  margin: 1em;
-  background-color: white;
-}
-
-ul.camera-thumbs img {
-  height: 100px;
-  width: 100px;
-  padding: 1em;
-}
-
-ul.camera-thumbs img:hover {
-  cursor: pointer;
-}
-
-
-ul.specs {
-  clear: both;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-ul.specs > li{
-  display: inline-block;
-  width: 200px;
-  vertical-align: top;
-}
-
-ul.specs > li > span{
-  font-weight: bold;
-  font-size: 1.2em;
-}
-
-ul.specs dt {
-  font-weight: bold;
-}
-
-h1 {
-  border-bottom: 1px solid gray;
+.instance-types{
+height:600px; 
+width:800px;
+ padding: 15px;
 }
