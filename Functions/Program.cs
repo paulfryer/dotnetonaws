@@ -10,12 +10,26 @@ namespace Functions
     {
         static void Main(string[] args)
         {
-            TestExporter();
+            TestFlckr().Wait();
 
             //TestSyncPricesAsync().Wait();
 
             Console.ReadKey();
         }
+
+        public static async Task TestFlckr(){
+            var f = new FlickrController();
+
+
+            var r = await f.SearchImages(new FlickrController.ImageProcessingState{
+                APIKey = "enterapikeyhere",
+                Page = 0,
+                PageSize = 100,
+                Tags = "ddd,ddd"
+            });
+
+        }
+
         private static async Task TestExporter()
         {
             var c = new ExportController();
