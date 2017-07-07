@@ -9,6 +9,7 @@ using Amazon.DynamoDBv2;
 using Amazon.Rekognition;
 using Amazon.EC2;
 using Amazon.Athena;
+using Amazon.CloudWatch;
 
 namespace WebApp
 {
@@ -43,7 +44,7 @@ namespace WebApp
             services.AddAWSService<IAmazonKeyManagementService>();
             services.AddAWSService<IAmazonRekognition>();
             services.AddAWSService<IAmazonEC2>();
-
+            services.AddAWSService<IAmazonCloudWatch>();
             services.AddAWSService<IAmazonAthena>();
         }
 
