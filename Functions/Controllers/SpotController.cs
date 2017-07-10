@@ -175,7 +175,7 @@ namespace Functions
             }
 
             // Wait for both IOT topic message to be published and all cloudwatch events to be created.
-            await Task.WhenAll();
+            await Task.WhenAll(tasks);
         }
 
 
@@ -225,6 +225,7 @@ namespace Functions
                     observationBatch.AddPutItem(o);
                 }
                 var observationWriteTask = observationBatch.ExecuteAsync();
+                // Wait at least 1 second.
                 await Task.WhenAll(observationWriteTask, Task.Delay(1000));
             }
         }
