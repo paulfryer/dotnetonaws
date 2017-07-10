@@ -16,6 +16,9 @@ using WebApp.Models;
 
 namespace WebApp.Controllers
 {
+    /// <summary>
+    /// Adding a comment.
+    /// </summary>
     [Route("api/[controller]")]
     public partial class PricesController : Controller
     {
