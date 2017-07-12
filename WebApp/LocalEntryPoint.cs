@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Builder;
 
 namespace WebApp
 {
+
+    // check in a comment from padnug.
     public class LocalEntryPoint
     {
         public static void Main(string[] args)
