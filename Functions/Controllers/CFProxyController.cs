@@ -37,7 +37,19 @@ namespace Functions
         }
 
         [LambdaSerializer(typeof(Amazon.Lambda.Serialization.Json.JsonSerializer))]
+        public async Task<CFProxyState> GetCloudFrontDistribution(CFProxyState e)
+        {
+            return e;
+        }
+
+        [LambdaSerializer(typeof(Amazon.Lambda.Serialization.Json.JsonSerializer))]
         public async Task<CFProxyState> CreateCloudFrontDistribution(CFProxyState e)
+        {
+            return e;
+        }
+
+        [LambdaSerializer(typeof(Amazon.Lambda.Serialization.Json.JsonSerializer))]
+        public async Task<CFProxyState> GetDomainRecords(CFProxyState e)
         {
             return e;
         }
