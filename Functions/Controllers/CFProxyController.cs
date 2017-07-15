@@ -12,27 +12,82 @@ using System.Linq;
 using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Amazon.CertificateManager;
+using Amazon.CertificateManager.Model;
 
 namespace Functions
 {
     public class CFProxyController
     {
+        IAmazonCertificateManager certManager;
+
+        public CFProxyController()
+        {
+            certManager = new AmazonCertificateManagerClient(Amazon.RegionEndpoint.USEast1);
+        }
 
         [LambdaSerializer(typeof(Amazon.Lambda.Serialization.Json.JsonSerializer))]
         public async Task<CFProxyState> ValidateInputParameters(CFProxyState e)
         {
+
+            if (string.IsNullOrEmpty(e.DomainName))
+                throw new ArgumentException("DomainName is required.");
+
+            if (string.IsNullOrEmpty(e.Regions))
+                throw new Exception("Regions is required.");
+
+            if (string.IsNullOrEmpty(e.Services))
+                throw new ArgumentException("Services is required.");
+
+            return e;
+        }
+
+        [LambdaSerializer(typeof(Amazon.Lambda.Serialization.Json.JsonSerializer))]
+        public async Task<CFProxyState> GetCert(CFProxyState e)
+        {
+            var certs = await certManager.ListCertificatesAsync(
+                new ListCertificatesRequest
+                {
+
+                }
+            );
+
+            // TODO: recursive iterate the results if there is a next token.
+
+
+            foreach (var cert in certs.CertificateSummaryList){
+                if (cert.DomainName.ToLower() == "*." + e.DomainName.ToLower())
+                {
+                    e.CertExists = true;
+                    e.CertArn = cert.CertificateArn;
+                }
+                else e.CertExists = false;
+            }
+
             return e;
         }
 
         [LambdaSerializer(typeof(Amazon.Lambda.Serialization.Json.JsonSerializer))]
         public async Task<CFProxyState> RequestCert(CFProxyState e)
         {
+
+            throw new NotImplementedException();
+
             return e;
         }
 
         [LambdaSerializer(typeof(Amazon.Lambda.Serialization.Json.JsonSerializer))]
         public async Task<CFProxyState> GetCertApprovalStatus(CFProxyState e)
         {
+
+
+            var resp = await certManager.DescribeCertificateAsync(new DescribeCertificateRequest
+            {
+                CertificateArn = e.CertArn
+            });
+
+            //e.CertIsApproved = resp.
+
             return e;
         }
 
@@ -69,6 +124,7 @@ namespace Functions
         public string DomainName { get; set; }
 
         public bool CertExists { get; set; }
+        public string CertArn { get; set; }
         public bool CertIsApproved { get; set; }
 
         public int RegionsToProcess { get; set; }

@@ -1,9 +1,7 @@
 ﻿<Properties StartupConfiguration="{353B5C21-220D-4C5D-91B5-E29C6DD886E3}|Default">
   <MonoDevelop.Ide.Workbench ActiveDocument="dotnetonaws Status">
     <Files>
-      <File FileName="WebApp/Startup.cs" Line="28" Column="45" />
-      <File FileName="WebApp/Controllers/PricesController.cs" Line="25" Column="9" />
-      <File FileName="Functions/Controllers/SpotController.cs" Line="227" Column="60" />
+      <File FileName="Functions/Controllers/CFProxyController.cs" Line="89" Column="15" />
       <File FileName="dotnetonaws Status" />
     </Files>
   </MonoDevelop.Ide.Workbench>
@@ -12,7 +10,6 @@
     <BreakpointStore>
       <Breakpoint file="/Users/pfryer/Projects/dotnetonaws/Functions/EMRController.cs" relfile="Functions/EMRController.cs" line="36" column="1" />
       <Breakpoint file="/Users/pfryer/Projects/dotnetonaws/Functions/FlickrImageController.cs" relfile="Functions/FlickrImageController.cs" line="45" column="47" />
-      <Breakpoint file="/Users/pfryer/Projects/dotnetonaws/WebApp/Controllers/PricesController.cs" relfile="WebApp/Controllers/PricesController.cs" line="174" column="1" />
     </BreakpointStore>
   </MonoDevelop.Ide.DebuggingService.Breakpoints>
   <MonoDevelop.Ide.ItemProperties.WebApp PreferredExecutionTarget="MonoDevelop.Default" />

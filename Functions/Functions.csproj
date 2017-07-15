@@ -33,6 +33,7 @@
     <PackageReference Include="AWSSDK.Core" Version="3.3.14.1" />
     <PackageReference Include="AWSSDK.EC2" Version="3.3.14" />
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
+    <PackageReference Include="AWSSDK.CertificateManager" Version="3.3.2.14" />
   </ItemGroup>
 
 </Project>

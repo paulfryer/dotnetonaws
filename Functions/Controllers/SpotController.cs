@@ -46,7 +46,7 @@ namespace Functions
             var resp = await iot.AttachPrincipalPolicyAsync(new AttachPrincipalPolicyRequest
             {
                 PolicyName = "PricePublisher",
-                Principal = "arn:aws:iot:us-west-2:989469592528:cert/f123a51787402e504d12e26d67b22ccb3bfe007879f0b5c41f8a506ca825eaeb"
+                Principal = "arn:aws:iot:us-west-2:989469592528:cert/f123a51787402e504d12e26d67b22ccb3bfe007879f0b5c41f8a506ca825eaeb" // TODO: get this from secret store.
             });
 
             var iotData = new AmazonIotDataClient("https://afczxfromx2vu.iot.us-west-2.amazonaws.com");
