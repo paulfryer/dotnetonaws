@@ -19,6 +19,7 @@ using Amazon.CloudFront.Model;
 using Amazon.Route53;
 using Amazon.Route53.Model;
 using System.Reflection;
+using System.Text;
 
 namespace Functions
 {
@@ -30,6 +31,7 @@ namespace Functions
 
     public interface IStateMachine {
         Type StartAt { get; }
+        string Describe(string region, string accountId);
     }
 
     public abstract class StateMachine<TStartsAt> : IStateMachine 
@@ -41,18 +43,96 @@ namespace Functions
             }
         }
 
+        public string Describe(string region, string accountId)
+        {
+            
 
+            var sb = new StringBuilder();
+
+            sb.AppendLine("{");
+            sb.AppendLine("\"StartAt\": \"" + StartAt.Name + "\",");
+            sb.AppendLine("\"States\": {");
+
+            var states = Assembly.GetEntryAssembly().GetTypes()
+                                 .Where(t => typeof(IState).IsAssignableFrom(t) && 
+                                        t.GetTypeInfo().IsClass &&
+                                        t.GetTypeInfo().IsSealed)
+                                     .Select(t => (IState)Activator.CreateInstance(t));
+            
+            var appendComma = false;
+            foreach (var state in states){
+                if (appendComma) sb.Append(",");
+                DescribeState(sb, state, region, accountId);
+                appendComma = true;
+            }
+   
+            sb.Append("}");
+            sb.AppendLine("}");
+
+            return sb.ToString();
+
+        }
+
+        void DescribeState(StringBuilder sb, IState state, string region, string accountId)
+        {
+            sb.AppendLine("\"" + state.GetType().Name + "\" : { ");
+
+            if (state is ITaskState)
+            {
+                var taskState = state as ITaskState;
+                sb.AppendLine("\"Type\":\"Task\",");
+                sb.AppendLine($"\"Resource\":\"arn:aws:lambda:{region}:{accountId}:function:{GetType().Name}-{state.Name}\",");
+                sb.AppendLine($"\"Next\":\"{taskState.Next.Name}\"");
+            }
+            if (state is IChoiceState){
+                var choiceState = state as IChoiceState;
+                sb.AppendLine("\"Type\":\"Choice\",");
+                sb.AppendLine("\"Choices\": [");
+                var appendComma = false;
+                foreach(var choice in choiceState.Choices){
+                    if (appendComma) sb.Append(",");
+                    sb.AppendLine("{");
+                    sb.AppendLine("\"Variable\":\"$." + choice.Variable + "\",");
+                    var stringValue = Convert.ToString(choice.Value);
+                    if (choice.Operator.ToUpper().StartsWith("ST"))
+                        stringValue = "\"" + stringValue + "\"";
+                    if (choice.Operator.ToUpper().StartsWith("BO"))
+                        stringValue = stringValue.ToLower();
+                    sb.AppendLine($"\"{choice.Operator}\": {stringValue},");
+                    sb.AppendLine($"\"Next\":\"{choice.Next.Name}\"");
+                    sb.AppendLine("}");
+                    appendComma = true;
+                }
+                sb.AppendLine("]");
+            }
+            if (state is IPassState){
+                sb.AppendLine("\"Type\":\"Pass\",");
+            }
+            if (state is IWaitState){
+                var waitState = state as IWaitState;
+                sb.AppendLine("\"Type\":\"Wait\",");
+                sb.AppendLine("\"Seconds\": " + waitState.Seconds + ",");
+                sb.AppendLine($"\"Next\":\"{waitState.Next.Name}\"");
+
+            }
+
+            if (state.End)
+                sb.AppendLine("\"End\": true");
+
+            sb.AppendLine("}");
+        }
     }
 
-    public class StateMachineExecutor<TContext>
+    public class StateMachineEngine<TStateMachine, TContext>
+        where TStateMachine : IStateMachine
         where TContext : IContext
     {
-        IStateMachine stateMachine;
+        TStateMachine stateMachine;
         TContext context;
 
-        public StateMachineExecutor(IStateMachine stateMachine, TContext context)
+        public StateMachineEngine(TContext context)
         {
-            this.stateMachine = stateMachine;
+            stateMachine = (TStateMachine)Activator.CreateInstance(typeof(TStateMachine));
             this.context = context;
         }
 
@@ -134,9 +214,25 @@ namespace Functions
         }
     }
 
-    public interface ITaskState<TContext> : IState
+    public abstract class TaskState<TContext, TNext> : State, ITaskState<TContext>
+        where TContext : IContext
+        where TNext : IState
     {
+        public Type Next {
+            get {
+                return GetType().GetTypeInfo().BaseType.GenericTypeArguments[1];
+            }
+        }
+
+        public abstract Task<TContext> Execute(TContext context);
+    }
+
+    public interface ITaskState : IState {
         Type Next { get; }
+    }
+
+    public interface ITaskState<TContext> : ITaskState
+    {
         Task<TContext> Execute(TContext context);
     }
 
@@ -189,45 +285,38 @@ namespace Functions
         public const string TimestampLessThanEquals = "TimestampLessThanEquals";
     }
 
-    public class GetCert : State, ITaskState<CFProxyState>
+    public sealed class GetCert : TaskState<CFProxyState, CheckIfCertExists>
     {
-        public Type Next
-        {
-            get
-            {
-                return typeof(CheckIfCertExists);
-            }
-        }
 
         IAmazonCertificateManager certManager = new AmazonCertificateManagerClient(Amazon.RegionEndpoint.USEast1);
 
 
-		public async Task<CFProxyState> Execute(CFProxyState e)
+        public override async Task<CFProxyState> Execute(CFProxyState e)
         {
-			var certs = await certManager.ListCertificatesAsync(
-				new ListCertificatesRequest
-				{
+            var certs = await certManager.ListCertificatesAsync(
+                new ListCertificatesRequest
+                {
 
-				}
-			);
+                }
+            );
 
-			// TODO: recursive iterate the results if there is a next token.
+            // TODO: recursive iterate the results if there is a next token.
 
 
-			foreach (var cert in certs.CertificateSummaryList)
-			{
-				if (cert.DomainName.ToLower() == "*." + e.DomainName.ToLower())
-				{
-					e.CertExists = true;
-					e.CertArn = cert.CertificateArn;
-				}
-			}
+            foreach (var cert in certs.CertificateSummaryList)
+            {
+                if (cert.DomainName.ToLower() == "*." + e.DomainName.ToLower())
+                {
+                    e.CertExists = true;
+                    e.CertArn = cert.CertificateArn;
+                }
+            }
 
-			return e;
+            return e;
         }
     }
 
-    public class CheckIfCertExists : State, IChoiceState
+    public sealed class CheckIfCertExists : State, IChoiceState
     {
         public List<Choice> Choices
         {
@@ -252,31 +341,28 @@ namespace Functions
         }
     }
 
-    public class GetCertApprovalStatus : State, ITaskState<CFProxyState>
+    public sealed class GetCertApprovalStatus : TaskState<CFProxyState, CheckIfCertIsApproved>
     {
-		IAmazonCertificateManager certManager = new AmazonCertificateManagerClient(Amazon.RegionEndpoint.USEast1);
+        IAmazonCertificateManager certManager = new AmazonCertificateManagerClient(Amazon.RegionEndpoint.USEast1);
 
-
-        public Type Next { get { return typeof(CheckIfCertIsApproved); }}
-
-        public async Task<CFProxyState> Execute(CFProxyState e)
+        public override async Task<CFProxyState> Execute(CFProxyState e)
         {
-			var resp = await certManager.DescribeCertificateAsync(new DescribeCertificateRequest
-			{
-				CertificateArn = e.CertArn
-			});
+            var resp = await certManager.DescribeCertificateAsync(new DescribeCertificateRequest
+            {
+                CertificateArn = e.CertArn
+            });
 
-			if (resp.Certificate.Status == CertificateStatus.PENDING_VALIDATION)
-				e.CertIsApproved = false;
-			else if (resp.Certificate.Status == CertificateStatus.ISSUED)
-				e.CertIsApproved = true;
-			else throw new Exception("Unsupported certificate status: " + resp.Certificate.Status);
+            if (resp.Certificate.Status == CertificateStatus.PENDING_VALIDATION)
+                e.CertIsApproved = false;
+            else if (resp.Certificate.Status == CertificateStatus.ISSUED)
+                e.CertIsApproved = true;
+            else throw new Exception("Unsupported certificate status: " + resp.Certificate.Status);
 
-			return e;
+            return e;
         }
     }
 
-    public class CheckIfCertIsApproved : State, IChoiceState
+    public sealed class CheckIfCertIsApproved : State, IChoiceState
     {
         public List<Choice> Choices {
             get {
@@ -299,7 +385,7 @@ namespace Functions
         }
     }
 
-    public class ForEachRegion : State, IChoiceState
+    public sealed class ForEachRegion : State, IChoiceState
     {
         public List<Choice> Choices {
             get {
@@ -321,7 +407,7 @@ namespace Functions
         }
     }
 
-    public class ForEachService : State, IChoiceState
+    public sealed class ForEachService : State, IChoiceState
     {
         public List<Choice> Choices
         {
@@ -329,18 +415,109 @@ namespace Functions
             {
                 return new List<Choice>{
                     new Choice{
-
+                        Variable = "ServicesToProcess",
+                        Operator = Operator.NumericGreaterThan,
+                        Value = 0,
+                        Next = typeof(GetCloudFrontDistribution)
+                    },
+                    new Choice{
+                        Variable = "ServicesToProcess",
+                        Operator = Operator.NumericEquals,
+                        Value = 0,
+                        Next = typeof(ForEachRegion)
                     }
                 };
             }
         }
     }
 
-    public class Done : State, IPassState{
-        
+    public sealed class GetCloudFrontDistribution : TaskState<CFProxyState, CheckIfCloudFrontDistributionExists>
+    {
+        public override Task<CFProxyState> Execute(CFProxyState context)
+        {
+            throw new NotImplementedException();
+        }
     }
 
-    public class WaitForCertApproval : State, IWaitState
+    public sealed class CheckIfCloudFrontDistributionExists : State, IChoiceState
+    {
+        public List<Choice> Choices {
+            get {
+                return new List<Choice>
+                {
+                    new Choice{
+                        Variable = "DistributionExists",
+                        Operator = Operator.BooleanEquals,
+                        Value = true,
+                        Next = typeof(GetDomainRecords)
+                    },
+                    new Choice{
+                        Variable = "DistributionExists",
+                        Operator = Operator.BooleanEquals,
+                        Value = false,
+                        Next = typeof(CreateCloudFrontDistribution)
+                    }
+                };
+            }
+        }
+    }
+
+    public sealed class GetDomainRecords : TaskState<CFProxyState, CheckIfRoute53CNAMEExists>
+    {
+        public override Task<CFProxyState> Execute(CFProxyState context)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    public sealed class CheckIfRoute53CNAMEExists : State, IChoiceState
+    {
+        public List<Choice> Choices {get{
+                return new List<Choice>
+                {
+                    new Choice{
+                        Variable = "CNAMEExists",
+                        Operator = Operator.BooleanEquals,
+                        Value = true,
+                        Next = typeof(ForEachService)
+                    },
+                    new Choice{
+                        Variable = "CNAMEExists",
+                        Operator = Operator.BooleanEquals,
+                        Value = false,
+                        Next = typeof(CreateRoute53CNAME)
+                    }
+                };
+            }}
+    }
+
+    public sealed class CreateRoute53CNAME : TaskState<CFProxyState, ForEachService>
+    {
+        public override Task<CFProxyState> Execute(CFProxyState context)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    public sealed class CreateCloudFrontDistribution : TaskState<CFProxyState, GetDomainRecords>
+    {
+        public override Task<CFProxyState> Execute(CFProxyState context)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    public sealed class Done : State, IPassState{
+        public override bool End
+        {
+            get
+            {
+                return true;
+            }
+        }
+    }
+
+    public sealed class WaitForCertApproval : State, IWaitState
     {
         public int Seconds { get { return 120; }}
 
@@ -348,23 +525,17 @@ namespace Functions
 
     }
 
-    public class RequestCert : State, ITaskState<CFProxyState>
+    public sealed class RequestCert : TaskState<CFProxyState, WaitForCertApproval>
     {
-        public Type Next => throw new NotImplementedException();
-
-        public Task<CFProxyState> Execute(CFProxyState context)
+        public override async Task<CFProxyState> Execute(CFProxyState context)
         {
             throw new NotImplementedException();
         }
     }
 
-    public class ValidateInputParameters : State, ITaskState<CFProxyState>
+    public sealed class ValidateInputParameters : TaskState<CFProxyState, GetCert>
     {
-        public Type Next { get { return typeof(GetCert); } }
-
-
-        [LambdaSerializer(typeof(Amazon.Lambda.Serialization.Json.JsonSerializer))]
-        public async Task<CFProxyState> Execute(CFProxyState e)
+        public override async Task<CFProxyState> Execute(CFProxyState e)
         {
             if (string.IsNullOrEmpty(e.DomainName))
                 throw new ArgumentException("DomainName is required.");
