@@ -34,6 +34,11 @@
     <PackageReference Include="AWSSDK.EC2" Version="3.3.14" />
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
     <PackageReference Include="AWSSDK.CertificateManager" Version="3.3.2.14" />
+    <PackageReference Include="AWSSDK.CloudFront" Version="3.3.4.4" />
+    <PackageReference Include="AWSSDK.Route53" Version="3.3.6.3" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="StepFunctions\" />
+  </ItemGroup>
 </Project>

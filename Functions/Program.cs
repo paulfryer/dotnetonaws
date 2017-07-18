@@ -10,7 +10,18 @@ namespace Functions
     {
         static void Main(string[] args)
         {
-            TestFlckr().Wait();
+            var context = new CFProxyState
+            {
+                Services = "iot",
+                Regions = "us-west-2",
+                DomainName = "api.octank.biz"
+            };
+            var stateMachineExecutor = new StateMachineExecutor<CFProxyState>(
+                new CFProxyStateMachine(), context);
+
+            stateMachineExecutor.Start();
+
+            //TestFlckr().Wait();
 
             //TestSyncPricesAsync().Wait();
 
