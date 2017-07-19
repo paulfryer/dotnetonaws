@@ -13,13 +13,13 @@ namespace Functions
             var description = (new CFProxyStateMachine()).Describe("us-west-2", "072676109536");
             Console.Write(description);
 
-            var context = new CFProxyState
+            var context = new CFProxyContext
             {
-                Services = "iot",
-                Regions = "us-west-2",
+                Services = "monitoring",
+                Regions = "us-west-1",
                 DomainName = "api.octank.biz"
             };
-            var engine = new StateMachineEngine<CFProxyStateMachine, CFProxyState>(context);
+            var engine = new StateMachineEngine<CFProxyStateMachine, CFProxyContext>(context);
 
             engine.Start();
 
