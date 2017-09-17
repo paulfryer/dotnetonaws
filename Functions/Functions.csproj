@@ -19,6 +19,7 @@
     <PackageReference Include="Amazon.Lambda.Core" Version="1.0.0" />
     <PackageReference Include="Amazon.Lambda.DynamoDBEvents" Version="1.0.1" />
     <PackageReference Include="Amazon.Lambda.Serialization.Json" Version="1.1.0" />
+    <PackageReference Include="AWSSDK.APIGateway" Version="3.3.8" />
     <PackageReference Include="AWSSDK.CloudWatch" Version="3.3.2.6" />
     <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.3.4.13" />
     <PackageReference Include="AWSSDK.IoT" Version="3.3.5" />
