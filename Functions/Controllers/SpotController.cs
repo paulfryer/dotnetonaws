@@ -220,9 +220,18 @@ namespace Functions
                 var writeRequests = new List<WriteRequest>();
                 foreach (var r in rowsToSync)
                 {
-                    var instanceType = instanceTypes.Single(it => it.Code == r.Value.InstanceType);
-                    var o = new FlatPriceObservation(new PriceObservation(r.Value, instanceType));
-                    observationBatch.AddPutItem(o);
+                    try
+                    {
+                        var instanceType = instanceTypes.Single(it => it.Code == r.Value.InstanceType);
+                        var o = new FlatPriceObservation(new PriceObservation(r.Value, instanceType));
+                        observationBatch.AddPutItem(o);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error while trying to add instance type: {r.Value.InstanceType}");
+                        Console.Write(ex);
+                    }
+
                 }
                 var observationWriteTask = observationBatch.ExecuteAsync();
                 // Wait at least 1 second.
@@ -243,9 +252,15 @@ namespace Functions
                 nextToken = resp.NextToken;
                 foreach (var spotPrice in resp.SpotPriceHistory)
                 {
-                    var instanceType = instanceTypes.Single(it => it.Code == spotPrice.InstanceType);
-                    var observation = new PriceObservation(spotPrice, instanceType);
-                    csv.Add(observation.ToCSV());
+                    try
+                    {
+                        var instanceType = instanceTypes.Single(it => it.Code == spotPrice.InstanceType);
+                        var observation = new PriceObservation(spotPrice, instanceType);
+                        csv.Add(observation.ToCSV());
+                    }
+                    catch (Exception ex) {
+                        Console.WriteLine($"Error while adding instance type: {spotPrice.InstanceType}");
+                    }
                 }
             }
             return nextToken;
